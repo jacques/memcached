@@ -2,24 +2,17 @@
 wintitle=>download
 body<=
 
-<?h1 Download h1?>
+<?h1 Download Server h1?>
 
-<p> The server is licensed under the BSD License.  The Perl library,
-included, is licensed under either the Artistic License or the GPL.
-The PHP module is under the GPL.  </p>
+<p>The server is licensed under the BSD License.  Read the <a href="http://cvs.danga.com/browse.cgi/wcmtools/memcached/ChangeLog?rev=HEAD&amp;content-type=text/plain">ChangeLog</a> for details on what's new.</p>
 
 <ul>
-<li><a href="memcached-1.1.6.tar.gz">memcached-1.1.6.tar.gz</a> -- June 30, 2003 (use a hash and not Judy for stability, shrink structures, bug fixes)</li>
+<li><a href="dist/memcached-1.1.7.tar.gz">memcached-1.1.7.tar.gz</a> -- July 29, 2003
 </ul>
 
-<?h1 Old Releases h1?>
+<?h1 Download Client APIS h1?>
+<p>The client APIs, licensed individually, are available for download on the <a href="apis.bml">Client APIs</a> page.</p>
 
-<ul>
-<li><a href="memcached-1.0.4.tar.gz">memcached-1.0.4.tar.gz</a> -- June 16, 2003 (PHP support, better Perl docs)</li>
-<li><a href="memcached-1.0.3.tar.gz">memcached-1.0.3.tar.gz</a> -- June 15, 2003 (autoconf support, portability enhancements)</li>
-<li><a href="memcached-1.0.1.tar.gz">memcached-1.0.1.tar.gz</a> -- June 11, 2003 (fixed bug in Perl library:  after making module generic (non-LJ), I'd broken the get function, and only get_multi worked)</li>
-<li><a href="memcached-1.0.tar.gz">memcached-1.0.tar.gz</a> -- June 10, 2003</li>
-</ul>
 
 <=body
 page?>

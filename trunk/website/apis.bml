@@ -4,9 +4,11 @@ body<=
 
 <?h1 Perl API h1?> 
 
-<p> An object-oriented Perl module (<tt>MemCachedClient.pm</tt>) is
-included in the distribution (<a href="download.bml">download</a>)
-under the directory <tt>api/perl/</tt>.<p>
+<p> An object-oriented Perl module:</p>
+<ul>
+<li><a href="dist/MemCachedClient-1.0.6.tar.gz">MemCachedClient-1.0.6.tar.gz</a>, GPL/Artistic.
+[<a href="http://cvs.danga.com/browse.cgi/wcmtools/memcached/api/perl/ChangeLog?rev=HEAD&amp;content-type=text/plain">ChangeLog</a>]
+</ul>
 
 <p>The API takes advantage of the server's opaque flag support and
 sets its "complex" flag whenever the object being stored or retrieved
@@ -17,12 +19,18 @@ the memcached.</p>
 <?h1 PHP API h1?>
 
 <p>An object-oriented PHP module modelled after the Perl one is also
-included in the distribution.  See its source for documentation and
-examples.</p>
+included in the distribution.</p>
 
-<p>The PHP API has not experienced heavy real-world stress testing
-like the Perl module.  Please let us know your experiences with
-it.</p>
+<ul>
+<li><a href="dist/php-memcached-1.0.6.tar.gz">php-memcached-1.0.6.tar.gz</a>, GPL.
+[<a href="http://cvs.danga.com/browse.cgi/wcmtools/memcached/api/php/ChangeLog?rev=HEAD&amp;content-type=text/plain">ChangeLog</a>]
+</ul>
+
+<p>The PHP API, while in use and tested, has not experienced the same
+level of severe beating as the Perl module in heavy production.
+Please let us know your experiences with it, good or bad, so we can
+either remove this disclaimer, or fix any problems you find,
+respectively.</p>
 
 <?h1 Java API h1?> <p>Volunteers?  (I imagine it storing ints,
 Strings, and Objects implementing the Serializable interface, just
