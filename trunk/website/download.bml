@@ -10,7 +10,7 @@ body<=
 <li><a href="dist/memcached-1.1.8.tar.gz">memcached-1.1.8.tar.gz</a> -- July 29, 2003
 </ul>
 
-<?h1 Download Client APIS h1?>
+<?h1 Download Client APIs h1?>
 <p>The client APIs, licensed individually, are available for download on the <a href="apis.bml">Client APIs</a> page.</p>
 
 
