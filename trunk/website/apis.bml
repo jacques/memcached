@@ -45,13 +45,11 @@ out there would care to improve it.</p>
 
 
 <?h1 Java API h1?>
-<p>A Java API is now available and in use by a few people.  Please join the mailing list and let us know your experiences with it.</p>
+<p>A Java API is maintained by <a href="mailto:greg@meetup.com">Greg Whalin</a> from <a href="http://www.meetup.com/">Meetup.com</a>.  You can find that library here:
 
 <ul>
-<li><a href="dist/java-memcached-0.9.1.tar.gz">java-memcached-0.9.1.tar.gz</a>, GPL license.
-[<a href="http://cvs.danga.com/browse.cgi/wcmtools/memcached/api/java/CHANGELOG.txt?rev=HEAD&amp;content-type=text/plain">ChangeLog</a>]
+<li><a href="http://www.whalin.com/memcached/">http://www.whalin.com/memcached/</a> -- Java API for memcached
 </ul>
-
 
 
 <?h1 Protocol h1?> <p>To write a new client, check out the <a
