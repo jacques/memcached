@@ -1,6 +1,7 @@
 body {
   font-family: sans-serif;
   border: 5px solid #7070d0; margin: 0; padding: 30px;
+  background: white;
 }
 a { color: #5050d0; }
 h1 {
