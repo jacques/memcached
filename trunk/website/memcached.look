@@ -25,6 +25,6 @@ page<=
 
 h1=>{D}<h2>%%data%%</h2>
 
-memd=>{S}<tt class='mem'><b>memcached</b></tt>
+memd=>{S}<tt class='mem'>memcached</tt>
 
 link=>{RP}[<a href="%%data1%%" class='barlink'>%%data2%%</a>] 

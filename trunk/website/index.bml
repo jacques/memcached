@@ -97,7 +97,7 @@ writing threads.</p>
 href="http://www.monkey.org/~provos/libevent/">libevent</a> to scale
 to any number of open connections</a> (using <a
 href="http://www.xmailserver.org/linux-patches/nio-improve.html">epoll</a>
-on Linux), uses non-blocking network I/O, refcounts internal objects
+on Linux, if available at runtime), uses non-blocking network I/O, refcounts internal objects
 (so objects can be in multiple states to multiple clients), and uses
 its own slab allocator and hash table so virtual memory never gets
 externally fragmented and allocations are guaranteed O(1).</p>
