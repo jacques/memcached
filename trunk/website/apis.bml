@@ -21,10 +21,9 @@ the memcached.</p>
 <p>Several PHP APIs are available:</p>
 
 <ul>
-<li><a href="dist/php-memcached-1.0.10.tar.gz">php-memcached-1.0.10.tar.gz</a>, GPL.  Original client.
-[<a href="http://cvs.danga.com/browse.cgi/wcmtools/memcached/api/php/ChangeLog?rev=HEAD&amp;content-type=text/plain">ChangeLog</a>]</li>
 <li><a href="http://phpca.cytherianage.net/memcached/">http://phpca.cytherianage.net/memcached/</a></li>
 <li><a href="http://pecl.php.net/package/memcache/">http://pecl.php.net/package/memcache/</a> -- implemented in C, but doesn't support multiple memcached servers</li>
+<li>... (many others, send me links?)</li>
 </ul>
 
 <?h1 Python API h1?>
