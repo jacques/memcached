@@ -74,17 +74,14 @@ end up getting much more bang for your buck, since your databases
 won't be blocking themselves doing ACID bookkeeping or waiting on
 writing threads.</p>
 
-<?h1 Is <?memd?> fast? h1?>
-<p>Very fast.  It uses <a
+<?h1 Is <?memd?> fast? h1?> <p>Very fast.  It uses <a
 href="http://www.monkey.org/~provos/libevent/">libevent</a> to scale
 to any number of open connections</a> (using <a
 href="http://www.xmailserver.org/linux-patches/nio-improve.html">epoll</a>
 on Linux), uses non-blocking network I/O, refcounts internal objects
-(so objects can be in multiple states to multiple clients), uses <a
-href="http://judy.sf.net">Judy</a> for fast mapping of string keys to
-pointers, and uses its own slab allocator so virtual memory never gets
+(so objects can be in multiple states to multiple clients), and uses
+its own slab allocator and hash table so virtual memory never gets
 externally fragmented and allocations are guaranteed O(1).</p>
-
 
 <?h1 What about race conditions? h1?>
 <p>You might wonder: <i>"What if the <tt>get_foo()</tt> function adds a stale version of the Foo object to the cache right as/after the user updates their Foo object via update_foo()?"</i></p>
