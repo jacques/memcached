@@ -1,0 +1,9 @@
+This are the things left to do
+
+Investigate threading issues (what needs to be synchronized)
+
+Investigate 3rd party jvm incompatability
+
+Non deprecated stream input
+
+Extensive testing
