@@ -24,13 +24,8 @@ the memcached.</p>
 <li><a href="dist/php-memcached-1.0.10.tar.gz">php-memcached-1.0.10.tar.gz</a>, GPL.  Original client.
 [<a href="http://cvs.danga.com/browse.cgi/wcmtools/memcached/api/php/ChangeLog?rev=HEAD&amp;content-type=text/plain">ChangeLog</a>]</li>
 <li><a href="http://phpca.cytherianage.net/memcached/">http://phpca.cytherianage.net/memcached/</a></li>
-<li><a href="http://pecl.php.net/package/memcache/">http://pecl.php.net/package/memcache/</a></li>
+<li><a href="http://pecl.php.net/package/memcache/">http://pecl.php.net/package/memcache/</a> -- implemented in C, but doesn't support multiple memcached servers</li>
 </ul>
-
-<p>I can't remember the differences between them, or the state of
-each, but I'd love an email setting me straight so I could make this
-section more informative.</p>
-
 
 <?h1 Python API h1?>
 
