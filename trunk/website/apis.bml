@@ -23,7 +23,7 @@ included in the distribution.  It includes freeze/thaw support for serializing
 objects (like Perl's Storable).</p>
 
 <ul>
-<li><a href="dist/php-memcached-1.0.8.tar.gz">php-memcached-1.0.8.tar.gz</a>, GPL.
+<li><a href="dist/php-memcached-1.0.9.tar.gz">php-memcached-1.0.9.tar.gz</a>, GPL.
 [<a href="http://cvs.danga.com/browse.cgi/wcmtools/memcached/api/php/ChangeLog?rev=HEAD&amp;content-type=text/plain">ChangeLog</a>]
 </ul>
 
