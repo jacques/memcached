@@ -53,7 +53,7 @@ except ImportError:
     import pickle
 
 __author__    = "Evan Martin <martine@danga.com>"
-__version__   = "1.1"
+__version__   = "1.2"
 __copyright__ = "Copyright (C) 2003 Danga Interactive"
 __license__   = "Python"
 
@@ -445,7 +445,7 @@ class _Host:
 
     def mark_dead(self, reason):
         print "MemCache: %s: %s.  Marking dead." % (self, reason)
-        self.deaduntil = time.time() + Host._DEAD_RETRY
+        self.deaduntil = time.time() + _Host._DEAD_RETRY
         self.close_socket()
         
     def _get_socket(self):
@@ -508,7 +508,7 @@ class _Host:
             d = " (dead until %d)" % self.deaduntil
         return "%s:%d%s" % (self.ip, self.port, d)
 
-def _test():
+def _doctest():
     import doctest, memcache
     servers = ["127.0.0.1:11211"]
     mc = Client(servers, debug=1)
@@ -516,7 +516,8 @@ def _test():
     return doctest.testmod(memcache, globs=globs)
 
 if __name__ == "__main__":
-    _test()
+    print "Testing docstrings..."
+    _doctest()
     print "Running tests:"
     print
     #servers = ["127.0.0.1:11211", "127.0.0.1:11212"]

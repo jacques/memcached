@@ -5,6 +5,8 @@
 Bring up two memcaches on :11211 and :11212.  Try killing one or both.
 If this code raises any exceptions, it's a bug."""
 
+import sys
+sys.path.append("..")
 import memcache
 import time
 
