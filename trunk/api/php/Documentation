@@ -1,14 +1,12 @@
+Ryan Gilfether <hotrodder@rocketmail.com>
+http://www.gilfether.com
 This module is Copyright (c) 2003 Ryan Gilfether.
 All rights reserved.
 
 You may distribute under the terms of the GNU General Public License
 This is free software. IT COMES WITHOUT WARRANTY OF ANY KIND.
 
-See the memcached website:
-   http://www.danga.com/memcached/
-
-Ryan Gilfether <hotrodder@rocketmail.com>
-http://www.gilfether.com
+See the memcached website: http://www.danga.com/memcached/
 
 
 // Takes one parameter, a array of options.  The most important key is
@@ -33,9 +31,13 @@ MemCachedClient::set_servers($servers);
 // value.  You may prefer, for example, to keep all of a given user's
 // objects on the same memcache server, so you could use the user's
 // unique id as the hash value.
+// Possible errors set are:
+// 		MC_ERR_GET
 MemCachedClient::get($key);
 
 // just like get(), but takes an array of keys, returns FALSE on error
+// Possible errors set are:
+// 		MC_ERR_NOT_ACTIVE
 MemCachedClient::get_multi($keys)
 
 // Unconditionally sets a key to a given value in the memcache.  Returns true
@@ -43,25 +45,64 @@ MemCachedClient::get_multi($keys)
 // The $key can optionally be an arrayref, with the first element being the
 // hash value, as described above.
 // returns TRUE on success else FALSE
+// Possible errors set are:
+// 		MC_ERR_NOT_ACTIVE
+// 		MC_ERR_GET_SOCK
+// 		MC_ERR_SOCKET_WRITE
+// 		MC_ERR_SOCKET_READ
+// 		MC_ERR_SET
 MemCachedClient::set($key, $value, $exptime);
 
 // Like set(), but only stores in memcache if the key doesn't already exist.
 // returns TRUE on success else FALSE
+// Possible errors set are:
+// 		MC_ERR_NOT_ACTIVE
+// 		MC_ERR_GET_SOCK
+// 		MC_ERR_SOCKET_WRITE
+// 		MC_ERR_SOCKET_READ
+// 		MC_ERR_SET
 MemCachedClient::add($key, $value, $exptime);
 
 // Like set(), but only stores in memcache if the key already exists.
 // returns TRUE on success else FALSE
+// Possible errors set are:
+// 		MC_ERR_NOT_ACTIVE
+// 		MC_ERR_GET_SOCK
+// 		MC_ERR_SOCKET_WRITE
+// 		MC_ERR_SOCKET_READ
+// 		MC_ERR_SET
 MemCachedClient::replace($key, $value, $exptime);
 
 // removes the key from the MemCache
-// returns TRUE on success else FALSE
-MemCachedClient::delete($key);
+// $time is the amount of time in seconds (or Unix time) until which
+// the client wishes the server to refuse "add" and "replace" commands
+// with this key. For this amount of item, the item is put into a
+// delete queue, which means that it won't possible to retrieve it by
+// the "get" command, but "add" and "replace" command with this key
+// will also fail (the "set" command will succeed, however). After the
+// time passes, the item is finally deleted from server memory.
+// The parameter $time is optional, and, if absent, defaults to 0
+// (which means that the item will be deleted immediately and further
+// storage commands with this key will succeed).
+// returns TRUE on success else returns FALSE
+// Possible errors set are:
+// 		MC_ERR_NOT_ACTIVE
+// 		MC_ERR_GET_SOCK
+// 		MC_ERR_SOCKET_WRITE
+// 		MC_ERR_SOCKET_READ
+// 		MC_ERR_DELETE
+MemCachedClient::delete($key, $time = 0);
 
 // Sends a command to the server to atomically increment the value for
 // $key by $value, or by 1 if $value is undefined.  Returns FALSE if $key
 // doesn't exist on server, otherwise it returns the new value after
 // incrementing.  Value should be zero or greater.  Overflow on server
 // is not checked.  Be aware of values approaching 2**32.  See decr.
+// Possible errors set are:
+// 		MC_ERR_NOT_ACTIVE
+// 		MC_ERR_GET_SOCK
+// 		MC_ERR_SOCKET_WRITE
+// 		MC_ERR_SOCKET_READ
 // returns new value on success, else returns FALSE
 // ONLY WORKS WITH NUMERIC VALUES
 MemCachedClient::incr($key[, $value]);
@@ -69,6 +110,11 @@ MemCachedClient::incr($key[, $value]);
 // Like incr, but decrements.  Unlike incr, underflow is checked and new
 // values are capped at 0.  If server value is 1, a decrement of 2
 // returns 0, not -1.
+// Possible errors set are:
+// 		MC_ERR_NOT_ACTIVE
+// 		MC_ERR_GET_SOCK
+// 		MC_ERR_SOCKET_WRITE
+// 		MC_ERR_SOCKET_READ
 // returns new value on success, else returns FALSE
 // ONLY WORKS WITH NUMERIC VALUES
 MemCachedClient::decr($key[, $value]);
@@ -82,6 +128,36 @@ MemCachedClient::set_debug($do_debug);
 
 // remove all cached hosts that are no longer good
 MemCachedClient::forget_dead_hosts();
+
+// When a function returns FALSE, an error code is set.
+// This funtion will return the error code.
+// See error_string()
+// returns last error code set
+MemCachedClient::error()
+
+// Returns a string describing the error set in error()
+// See error()
+// returns a string describing the error code given
+MemCachedClient::error_string()
+
+// Resets the error number and error string
+MemCachedClient::error_clear()
+
+Error codes are as follows:
+MC_ERR_NOT_ACTIVE		// no active servers
+MC_ERR_SOCKET_WRITE		// socket_write() failed
+MC_ERR_SOCKET_READ		// socket_read() failed
+MC_ERR_SOCKET_CONNECT	// failed to connect to host
+MC_ERR_DELETE			// delete() did not recieve DELETED command
+MC_ERR_HOST_FORMAT		// sock_to_host() invalid host format
+MC_ERR_HOST_DEAD		// sock_to_host() host is dead
+MC_ERR_GET_SOCK			// get_sock() failed to find a valid socket
+MC_ERR_SET				// _set() failed to receive the STORED response
+MC_ERR_LOADITEM_HEADER	// _load_items failed to receive valid data header
+MC_ERR_LOADITEM_END		// _load_items failed to receive END response
+MC_ERR_LOADITEM_BYTES	// _load_items bytes read larger than bytes available
+MC_ERR_GET				// failed to get value associated with key
+
 
 
 EXAMPLE:
@@ -170,7 +246,6 @@ $memc->set( "key", $data ) ;
 // now open a file for writing and write the data
 // retrieved from memcache
 $fp = fopen("./test.jpg","wb");
-print "WRITING<BR>";
 $data = $memc->get( "key" ) ;
 print "Data length is " . strlen( $data ) . "\n" ;
 fwrite($fp,$data,strlen( $data ));
