@@ -1,0 +1,120 @@
+#!/usr/bin/perl
+# vim: set ts=4 sw=4 et :
+
+use strict;
+use Gtk2;
+use MemCachedClient;
+use Data::Dumper;
+
+$Data::Dumper::Terse = 1;
+
+my @cmds = ();
+my $cmd_cur = -1;
+
+my $mc = new MemCachedClient {
+    'servers' => [ "127.0.0.1:11211" ]
+};
+
+Gtk2->init;
+my $win = Gtk2::Window->new("toplevel");
+$win->signal_connect(delete_event => sub { Gtk2->main_quit });
+$win->set_border_width(10);
+
+my $vb = Gtk2::VBox->new(0, 5);
+my $display = Gtk2::TextView->new;
+my $buffer = $display->get_buffer;
+$display->set_editable(0);
+my $scroll = Gtk2::ScrolledWindow->new;
+$scroll->set_policy('automatic', 'automatic');
+$scroll->set_shadow_type('in');
+$scroll->add($display);
+$vb->pack_start($scroll, 1, 1, 0);
+
+$display->modify_font(Gtk2::Pango::FontDescription->from_string("monospace"));
+$buffer->create_tag("command", "foreground", "blue");
+$buffer->create_tag("data");
+$buffer->create_tag("error", "foreground", "red");
+
+my $entry = Gtk2::Entry->new();
+$entry->signal_connect(key_press_event => \&entry_keypress);
+$entry->signal_connect(activate => \&entry_activate);
+$vb->pack_start($entry, 0, 0, 0);
+
+$win->add($vb);
+
+$win->set_title("MemCachedClient");
+$win->set_default_size(400, 500);
+$win->signal_connect(show => sub { $entry->grab_focus });
+$win->show_all;
+
+Gtk2->main;
+
+sub display {
+    my ($level, $text) = @_;
+    $buffer->insert_with_tags_by_name($buffer->get_end_iter, "$text\n", $level);
+}
+
+sub run_command {
+    my ($text) = @_;
+    
+    # if we're rerunning a history command, then
+    # we should pull it out of its old spot in the history.
+    splice(@cmds, $cmd_cur, 1)
+        if $cmd_cur >= 0 and $cmds[$cmd_cur] eq $text;
+    # and in any case, add this command to the history.
+    unshift(@cmds, $text);
+    $cmd_cur = -1;
+
+    display('command', $text);
+    if ($text =~ /^get\s+(\S+)$/i) {
+        my $str = $mc->get($1);
+        if (ref $str) {
+            $str = Dumper($str);
+            $str =~ s/^        //gm;
+        }
+        if ($str) {
+            display('data', $str);
+        } else {
+            display('error', "Not found.");
+        }
+    } elsif ($text =~ /^set\s+(\S+)\s+(.*)$/i) {
+        my ($key, $val) = ($1, $2);
+        if ($mc->set($key, $val)) {
+            display('data', "Ok.");
+        } else {
+            display('error', "Not found.");
+        }
+    } elsif ($text =~ /^delete\s+(\S+)$/i) {
+        $mc->delete($1);
+        display('data', "Ok.");
+    } else {
+        display('error', "Unknown command '$text'.");
+    }
+}
+
+sub entry_keypress {
+    my ($entry, $ev) = @_;
+    if ($ev->keyval == $Gtk2::Gdk::Keysyms{'Up'}) {
+        $cmd_cur++ if $cmd_cur < @cmds-1;
+        $entry->set_text($cmds[$cmd_cur]) if $cmds[$cmd_cur];
+        return 1;
+    } elsif ($ev->keyval == $Gtk2::Gdk::Keysyms{'Down'}) {
+        $cmd_cur-- if $cmd_cur >= 0;
+        if ($cmd_cur >= 0 and $cmds[$cmd_cur]) {
+            $entry->set_text($cmds[$cmd_cur]);
+        } else {
+            $entry->set_text('');
+        }
+        return 1;
+    }
+    return 0;
+}
+
+sub entry_activate {
+    my $text = $entry->get_text;
+    if ($text =~ /\w/) {
+        run_command($entry->get_text);
+        $entry->set_text("");
+    }
+}
+
