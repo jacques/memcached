@@ -11,11 +11,11 @@
  * This is free software. IT COMES WITHOUT WARRANTY OF ANY KIND.
  *
  * @author  Richard 'toast' Russo <russor@msoe.edu>
- * @version 0.9.0
+ * @version 0.9.1
  */
 
 
-package com.danga.MemCached; 
+package com.danga.MemCached;
 
 
 import java.util.*;
@@ -40,20 +40,33 @@ class SockIO {
     public void close() {
         closed = true;
         try {
-        in.close();
-        out.close();
-        sock.close();
+            in.close();
+            out.close();
+            sock.close();
         } catch (IOException e) {
         }
         
     }
-    public DataInputStream in() {
-        return in;
-    }
-    public DataOutputStream out() {
-        return out;
-    }
     public boolean isConnected() {
         return (closed && sock.isConnected());
     }
+    
+    public void readFully(byte[] b) throws IOException {
+        in.readFully(b);
+    }
+    
+    public String readLine() throws IOException {
+        return in.readLine();
+    }
+    
+    public void writeBytes(String s) throws IOException {
+        out.writeBytes(s);
+    }
+    public void flush() throws IOException {
+        out.flush();
+    }
+    public void write(byte[] b) throws IOException {
+        out.write(b);
+    }
+    
 }

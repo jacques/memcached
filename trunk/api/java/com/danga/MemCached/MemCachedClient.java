@@ -14,7 +14,7 @@
  * This is free software. IT COMES WITHOUT WARRANTY OF ANY KIND.
  *
  * @author  Richard 'toast' Russo <russor@msoe.edu>
- * @version 0.9.0
+ * @version 0.9.1
  */
 
 
@@ -29,10 +29,10 @@ import java.io.*;
 
 
 /** This is a Java client for the memcached server available from
- *  <a href="http:/www.danga.com/memcached/">http://www.danga.com/mecmched/</a>.*/
+ *  <a href="http:/www.danga.com/memcached/">http://www.danga.com/memcached/</a>.*/
 public class MemCachedClient {
     
-    final int F_COMPRESSED = 2; //same as perl flag... but not implemented
+    final int F_COMPRESSED = 2;
     final int F_SERIALIZED = 8;
     //using 8 (1 << 3) so other clients don't try to unpickle/unstore/whatever
     //things that are serialized... I don't think they'd like it. :)
@@ -44,6 +44,7 @@ public class MemCachedClient {
     boolean debug = false;
     boolean forceserial = false;
     
+    String singlesock = null;
     double compress_savings = 0.20;
     boolean compress_enable = true;
     int compress_threshold = 1024; // FIXME: is this a reasonable default??
@@ -51,7 +52,7 @@ public class MemCachedClient {
     /** Creates a new instance of MemCachedClient.
      *
      * By default, compression is enabled, with a threshold of 1024, and required
-     * savings of 0.2; debug is disabled; forced serialization is disabld; and the
+     * savings of 0.2; debug is disabled; forced serialization is disabled; and the
      * server list is empty.
      */
     public MemCachedClient() {
@@ -86,8 +87,8 @@ public class MemCachedClient {
         compress_enable = b;
     }
     
-    /** Sets the required lenght for data to be considered for compression. If the
-     * lenght of the data to be stored is not equal or larger than this value, it will
+    /** Sets the required length for data to be considered for compression. If the
+     * length of the data to be stored is not equal or larger than this value, it will
      * not be compressed.
      *
      * This defaults to 1024.
@@ -112,7 +113,7 @@ public class MemCachedClient {
      * system.  If you're not having problems, this is probably not useful for you.
      * @param b <CODE>true</CODE>, if debugging messages are desired, <CODE>false</CODE> if debugging messages are not
      * desired
-     */    
+     */
     public void set_debug(boolean b) {
         debug = b;
     }
@@ -147,6 +148,12 @@ public class MemCachedClient {
         buckets = new ArrayList();
         host_dead = new HashMap();
         sockets = new HashMap();
+        if (serverlist.length == 1) {
+            singlesock = serverlist[0];
+        } else {
+            singlesock = null;
+        }
+        
         
         for (int i = 0; i < serverlist.length; ++i) {
             if (weightlist != null && weightlist.length >i) {
@@ -160,6 +167,9 @@ public class MemCachedClient {
     }
     
     private SockIO get_sock(Object key) {
+        if (singlesock != null) {
+            return sock_to_host(singlesock);
+        }
         if (key.getClass() == Integer.class) {
             return get_sock(((Integer)key).intValue());
         } else {
@@ -169,10 +179,16 @@ public class MemCachedClient {
     
     
     private SockIO get_sock(String key) {
+        if (singlesock != null) {
+            return sock_to_host(singlesock);
+        }
         return get_sock(hashfunc(key));
     }
     
     private SockIO get_sock(int key) {
+        if (singlesock != null) {
+            return sock_to_host(singlesock);
+        }
         if ( buckets.size() == 0) {
             return null;
         }
@@ -255,13 +271,13 @@ public class MemCachedClient {
     
     /** Deletes a key from the server; only the key is specified.
      * @param key the key to be removed
-     * @return true, if the data was deleted succesfully
+     * @return true, if the data was deleted successfully
      */
     public boolean delete(String key) {
         return delete(key,null, null);
     }
     /** Deletes a key from the server; the key, and a hash value are specified.
-     * @return true, if the data was deleted succesfully
+     * @return true, if the data was deleted successfully
      * @param hash used to determine which server is responsible for the specified key
      * @param key the key to be removed
      */
@@ -269,7 +285,7 @@ public class MemCachedClient {
         return delete(key,null,new Integer(hash));
     }
     /** Deletes a key from the server; the key, and a hash value are specified.
-     * @return true, if the data was deleted succesfully
+     * @return true, if the data was deleted successfully
      * @param hash used to determine which server is responsible for the specified key
      * @param key the key to be removed
      */
@@ -277,13 +293,13 @@ public class MemCachedClient {
         return delete(key, null, hash);
     }
     /** Deletes a key from the server; the key, and a delete time are specified. The item
-     *  is immediately made non retreivable, however {@link #add(String, Object) add} and
+     *  is immediately made non retrievable, however {@link #add(String, Object) add} and
      *  {@link #replace(String, Object) replace} will fail when used with the same key will
      *  fail, until the server reaches the specified time. However,
      *  {@link #set(String, Object) set} will succeed, and the new value will not
      *  be deleted.
      *
-     * @return true, if the data was deleted succesfully
+     * @return true, if the data was deleted successfully
      * @param expiry when to expire the record
      * @param key the key to be removed
      */
@@ -292,13 +308,13 @@ public class MemCachedClient {
         return delete(key,expiry,null);
     }
     /** Deletes a key from the server; the key, a delete time are specified, and a hash value
-     *  are specified. The item is immediately made non retreivable, however
+     *  are specified. The item is immediately made non retrievable, however
      *  {@link #add(String, Object) add} and {@link #replace(String, Object) replace}
      *  will fail when used with the same key will fail, until the server reaches the
      *  specified time. However, {@link #set(String, Object) set} will succeed,
      *  and the new value will not be deleted.
      *
-     * @return true, if the data was deleted succesfully
+     * @return true, if the data was deleted successfully
      * @param expiry when to expire the record.
      * @param hash used to determine which server is responsible for the specified key
      * @param key the key to be removed
@@ -308,13 +324,13 @@ public class MemCachedClient {
     }
     
     /** Deletes a key from the server; the key, a delete time are specified, and a hash value
-     *  are specified. The item is immediately made non retreivable, however
+     *  are specified. The item is immediately made non retrievable, however
      *  {@link #add(String, Object) add} and {@link #replace(String, Object) replace}
      *  will fail when used with the same key will fail, until the server reaches the
      *  specified time. However, {@link #set(String, Object) set} will succeed,
      *  and the new value will not be deleted.
      *
-     * @return true, if the data was deleted succesfully
+     * @return true, if the data was deleted successfully
      * @param expiry when to expire the record.
      * @param hash used to determine which server is responsible for the specified key
      * @param key the key to be removed
@@ -337,10 +353,10 @@ public class MemCachedClient {
         command = command + "\r\n";
         
         try {
-            sock.out().writeBytes(command);
-            sock.out().flush();
+            sock.writeBytes(command);
+            sock.flush();
             
-            command = sock.in().readLine();
+            command = sock.readLine();
             if (command.equals("DELETED")) {
                 return true;
             }
@@ -746,19 +762,18 @@ public class MemCachedClient {
         try {
             String cmd = cmdname + " " + key + " " + flags + " " +
             expiry.getTime() / 1000 + " " + val.length + "\r\n";
-            sock.out().writeBytes(cmd);
-            sock.out().write(val);
-            sock.out().writeBytes("\r\n");
-            sock.out().flush();
+            sock.writeBytes(cmd);
+            sock.write(val);
+            sock.writeBytes("\r\n");
+            sock.flush();
             
-            String tmp = sock.in().readLine();
-            if (tmp.equals("STORED")) {
-                if (debug) {
-                    System.out.println("MemCache: " + cmdname + " " + key + " = " + val);
-                }
+            String line = sock.readLine();
+            if (debug) {
+                System.out.println("MemCache: " + cmdname + " " + key +
+                " = " + val + "(" + line + ")");
+            }
+            if (line.equals("STORED")) {
                 return true;
-            } else {
-                System.out.println("MemCache:" + cmd + tmp);
             }
             
         } catch (IOException e) {
@@ -968,9 +983,9 @@ public class MemCachedClient {
         }
         
         try {
-            sock.out().writeBytes(cmdname + " " + key + " " + inc + "\r\n");
-            sock.out().flush();
-            String tmp = sock.in().readLine();
+            sock.writeBytes(cmdname + " " + key + " " + inc + "\r\n");
+            sock.flush();
+            String tmp = sock.readLine();
             return Long.decode(tmp).longValue();
         } catch (IOException e) {
             sock.close();
@@ -986,7 +1001,7 @@ public class MemCachedClient {
      *  be decompressed or serialized, as appropriate. (Inclusive or)
      *
      *  Non-serialized data will be returned as a string, so explicit conversion to
-     *  numeric types will be necessisary, if desired
+     *  numeric types will be necessary, if desired
      *
      * @param key key where data is stored
      * @return the object that was previously stored, or null if it was not previously stored
@@ -1001,7 +1016,7 @@ public class MemCachedClient {
      *  be decompressed or serialized, as appropriate. (Inclusive or)
      *
      *  Non-serialized data will be returned as a string, so explicit conversion to
-     *  numeric types will be necessisary, if desired
+     *  numeric types will be necessary, if desired
      *
      * @param key key where data is stored
      * @param hash used to determine which server is responsible for the specified key
@@ -1017,23 +1032,45 @@ public class MemCachedClient {
      *  be decompressed or serialized, as appropriate. (Inclusive or)
      *
      *  Non-serialized data will be returned as a string, so explicit conversion to
-     *  numeric types will be necessisary, if desired
+     *  numeric types will be necessary, if desired
      *
      * @param key key where data is stored
      * @param hash used to determine which server is responsible for the specified key
      * @return the object that was previously stored, or null if it was not previously stored
      */
     public Object get(String key, Object hash) {
-        String[] k = { key };
-        Object[] h = { hash };
-        return get_multi(k,h).get(key);
+        SockIO sock;
+        if (hash != null) {
+            sock = get_sock(hash);
+        } else {
+            sock = get_sock(key);
+        }
+        
+        if (sock == null) {
+            return null;
+        }
+        try {
+            sock.writeBytes("get " + key + "\r\n");
+        } catch (IOException e) {
+            sock.close();
+        }
+        HashMap hm = new HashMap();
+        load_items(sock, hm);
+        if (debug) {
+            Iterator i = hm.entrySet().iterator();
+            while (i.hasNext()) {
+                Entry e = (Entry)i.next();
+                System.out.println("MemCache: got " + e.getKey() + " = " + e.getValue());
+            }
+        }
+        return hm.get(key);
     }
     
     
     /** Retrieve multiple keys from the memcache.
      *
      *  This is recommended over repeated calls to {@link #get(String) get()}, since it
-     *  is more efficent.
+     *  is more efficient.
      * @return a hashmap with entries for each key is found by the server,
      *      keys that are not found are not entered into the hashmap, but attempting to
      *      retrieve them from the hashmap gives you null.
@@ -1043,10 +1080,10 @@ public class MemCachedClient {
         return get_multi(keys, null);
     }
     
-    /** Retrieve multiple keys from the memcache. 
+    /** Retrieve multiple keys from the memcache.
      *
      *  This is recommended over repeated calls to {@link #get(String) get()}, since it
-     *  is more efficent.
+     *  is more efficient.
      * @param keys keys to retrieve
      * @param hashes hash values used to determine which server to use for each key;
      *      if a hash is not provided for a key (either because there are more keys
@@ -1077,12 +1114,15 @@ public class MemCachedClient {
         
         // Pass 1: send out requests
         
-        for (int i = 0; i < socks.size(); ++i) {
+        ArrayList gather = new ArrayList();
+        Iterator i = socks.iterator();
+        while (i.hasNext()) {
             SockIO sock =null;
             try {
-                sock = (SockIO) socks.get(i);
-                sock.out().writeBytes("get" + (StringBuffer)sock_keys.get(sock) + "\r\n");
-                sock.out().flush();
+                sock = (SockIO) i.next();
+                sock.writeBytes("get" + (StringBuffer)sock_keys.get(sock) + "\r\n");
+                sock.flush();
+                gather.add(sock);
             } catch (IOException e) {
                 sock.close();
             }
@@ -1090,12 +1130,13 @@ public class MemCachedClient {
         
         HashMap ret = new HashMap();
         // Pass 2: get results
-        for (int i = 0; i < socks.size(); ++i) {
-            load_items((SockIO) socks.get(i), ret);
+        i = gather.iterator();
+        while (i.hasNext()) {
+            load_items((SockIO) i.next(), ret);
         }
         
         if (debug) {
-            Iterator i = ret.entrySet().iterator();
+            i = ret.entrySet().iterator();
             while (i.hasNext()) {
                 Entry e = (Entry)i.next();
                 System.out.println("MemCache: got " + e.getKey() + " = " + e.getValue());
@@ -1107,7 +1148,7 @@ public class MemCachedClient {
     private void load_items(SockIO sock, HashMap hm) {
         try {
             while (true) {
-                String line = sock.in().readLine();
+                String line = sock.readLine();
                 if (line == null) {
                     return;
                 } else if (line.startsWith("VALUE")) {
@@ -1122,16 +1163,9 @@ public class MemCachedClient {
                     st.nextToken();
                     int length = new Integer(st.sval).intValue();
                     byte[] buf = new byte[length];
-                    int read = 0;
-                    while (read < length) {
-                        int tmp = sock.in().read(buf, read, length - read);
-                        if (tmp == -1) {
-                            return;
-                        }
-                        read+= tmp;
-                    }
+                    sock.readFully(buf); // blocking read
                     
-                    sock.in().readLine(); // clear out \r\n that should be left
+                    sock.readLine(); // clear out \r\n that should be left
                     // check for compression
                     Object o;
                     

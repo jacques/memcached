@@ -1,3 +1,20 @@
+Version 0.9.1 - 12 Oct 2003
+	-- Altered the SockIO helper class, so it no longer allows accessing
+		the streams it contains directly, instead it has methods
+		with identical signatures to the methods that were called
+		on the streams... This makes the client code prettier.
+	-- Changed looped non blocking read to blocking read, for getting
+		items from the server. This probably reduces CPU usage in
+		cases where the retrieval would block, and cleans up the
+		code a bit.  We're blocking on retrieval anyhow.
+	-- Made get() not call get_multi(), and added single socket
+		optimization. This parallels recent changes to the perl
+		client
+	-- Changed a few for loops to use iterators instead, since it's
+		probably marginally more efficient, and it's probably
+		better coding practice.
+	-- Actually spell checked. :)
+
 Version 0.9.0 - 29 Sep 2003
 	-- Renumbered to reflect that it's not been realworld tested
 	-- changed package to danga.com.MemCached (thanks)
