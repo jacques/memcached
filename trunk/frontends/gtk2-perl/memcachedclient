@@ -3,7 +3,8 @@
 
 use strict;
 use Gtk2;
-use MemCachedClient;
+use Gtk2::Gdk::Keysyms;
+use Cache::Memcached;
 use Data::Dumper;
 
 $Data::Dumper::Terse = 1;
@@ -11,7 +12,7 @@ $Data::Dumper::Terse = 1;
 my @cmds = ();
 my $cmd_cur = -1;
 
-my $mc = new MemCachedClient {
+my $mc = new Cache::Memcached {
     'servers' => [ "127.0.0.1:11211" ]
 };
 
@@ -32,7 +33,7 @@ $vb->pack_start($scroll, 1, 1, 0);
 
 $display->modify_font(Gtk2::Pango::FontDescription->from_string("monospace"));
 $buffer->create_tag("command", "foreground", "blue");
-$buffer->create_tag("data");
+$buffer->create_tag("data", "foreground", "black");
 $buffer->create_tag("error", "foreground", "red");
 
 my $entry = Gtk2::Entry->new();
