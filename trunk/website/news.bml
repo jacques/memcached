@@ -4,6 +4,13 @@ body<=
 
 <?h1 News h1?>
 
+<p><b>2004-04-30:</b> Version 1.1.11 <a
+href="download.bml">released</a>.  New option (off by default) to not
+act as a cache, but hold items forever until deleted (or until machine
+goes down, rather).  This release also installs the manual page, and
+raises the per-process file descriptor limit to match the specified
+max connections.
+
 <p><b>2003-12-30:</b> Version 1.1.10 <a
 href="download.bml">released</a>.  Now includes a command to wipe
 the entire cache.
