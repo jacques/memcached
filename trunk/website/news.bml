@@ -4,6 +4,9 @@ body<=
 
 <?h1 News h1?>
 
+<p><b>2003-06-15:</b> Autoconf support added in <a
+href="download.bml">1.0.2 release</a>.  Website text updated a bit.</p>
+
 <p><b>2003-06-10:</b> Website not so bad now.  Files licensed.  Perl
 API separated and documented.  <a href="download.bml">1.0 release</a>.</p>
 
