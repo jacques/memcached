@@ -1,0 +1,15 @@
+<?page
+wintitle=>client apis
+body<=
+
+<?h1 Perl API h1?>
+<p>...</p>
+
+<?h1 PHP API h1?>
+<p>...</p>
+
+<?h1 Java API h1?>
+<p>...</p>
+
+<=body
+page?>

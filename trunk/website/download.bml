@@ -1,0 +1,10 @@
+<?page
+wintitle=>download
+body<=
+
+<?h1 Download Server h1?>
+<p>The server is licensed under the <b>GPL</b>.  See the included <tt>LICENSE</tt> file for details.</p>
+
+
+<=body
+page?>
