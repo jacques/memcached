@@ -4,7 +4,10 @@ body<=
 
 <?h1 News h1?>
 
-<p><b>2003-06-16:</b> PHP support now included.
+<p><b>2003-06-30:</b> Version 1.1.6 <a
+href="download.bml">released</a>.  Many great changes.</p>
+
+<p><b>2003-06-16:</b> PHP support now included.</p>
 
 <p><b>2003-06-15:</b> Autoconf support added in <a
 href="download.bml">1.0.2 release</a>.  Website text updated a bit.</p>
