@@ -9,7 +9,7 @@ body<=
 <?h1 How it Works h1?>
 <p>First, you start up the <?memd?> daemon on as many spare machines as you have.  The daemon has no configuration file, just a few command line options, only 3 or 4 of which you'll likely use:
 <pre class='example'># ./memcached -d -m 2048 -l 10.0.0.40 -p 11211</pre>
-<p>This starts <?memd?> up as a daemon, using 2GB of memory, and listening on IP 10.0.0.40, port 11211.  Because a 32-bit process can only address 4GB of virtual memory (usually signifigantly less, depending on your operating system), if you have a 32-bit server with 4-64GB of memory using PAE you can just run multiple processes on the machine, each using 2 or 3GB of memory.</p>
+<p>This starts <?memd?> up as a daemon, using 2GB of memory, and listening on IP 10.0.0.40, port 11211.  Because a 32-bit process can only address 4GB of virtual memory (usually significantly less, depending on your operating system), if you have a 32-bit server with 4-64GB of memory using PAE you can just run multiple processes on the machine, each using 2 or 3GB of memory.</p>
 
 <?h1 Porting the Application h1?>
 <p>Now, in your application, wherever you go to do a database query, first check the memcache.  If the memcache returns an undefined object, then go to the database, get what you're looking for, and put it in the memcache:</p>
