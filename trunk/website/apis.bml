@@ -18,23 +18,19 @@ the memcached.</p>
 
 <?h1 PHP API h1?>
 
-<p>An object-oriented PHP module modelled after the Perl one is also
-included in the distribution.  It includes freeze/thaw support for serializing
-objects (like Perl's Storable).</p>
+<p>Several PHP APIs are available:</p>
 
 <ul>
-<li><a href="dist/php-memcached-1.0.10.tar.gz">php-memcached-1.0.10.tar.gz</a>, GPL.
-[<a href="http://cvs.danga.com/browse.cgi/wcmtools/memcached/api/php/ChangeLog?rev=HEAD&amp;content-type=text/plain">ChangeLog</a>]
+<li><a href="dist/php-memcached-1.0.10.tar.gz">php-memcached-1.0.10.tar.gz</a>, GPL.  Original client.
+[<a href="http://cvs.danga.com/browse.cgi/wcmtools/memcached/api/php/ChangeLog?rev=HEAD&amp;content-type=text/plain">ChangeLog</a>]</li>
+<li><a href="http://phpca.cytherianage.net/memcached/">http://phpca.cytherianage.net/memcached/</a></li>
+<li><a href="http://pecl.php.net/package/memcache/">http://pecl.php.net/package/memcache/</a></li>
 </ul>
 
-<p>The PHP API, while in use and tested, has not experienced the same
-level of severe beating as the Perl module in heavy production.
-Please let us know your experiences with it, good or bad, so we can
-either remove this disclaimer, or fix any problems you find,
-respectively.</p>
+<p>I can't remember the differences between them, or the state of
+each, but I'd love an email setting me straight so I could make this
+section more informative.</p>
 
-<p>Alternatively, a new PHP module is being developed at: <a
-href="http://phpca.cytherianage.net/memcached/">http://phpca.cytherianage.net/memcached/</a>.</p>
 
 <?h1 Python API h1?>
 
