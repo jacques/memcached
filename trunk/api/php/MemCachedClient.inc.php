@@ -19,7 +19,7 @@
 /**
  * version string
  */
-define("MC_VERSION", "1.0.7");
+define("MC_VERSION", "1.0.8");
 /**
  * int, buffer size used for sending and receiving
  * data from sockets
@@ -27,21 +27,19 @@ define("MC_VERSION", "1.0.7");
 define("MC_BUFFER_SZ", 1024);
 /**
  * MemCached error numbers
- * used with the MemCachedError class
  */
-define("MC_ERR_NOT_ACTIVE", 1001);		// no active servers
+define("MC_ERR_NOT_ACTIVE", 1001);	// no active servers
 define("MC_ERR_SOCKET_WRITE", 1002);	// socket_write() failed
-define("MC_ERR_SOCKET_READ", 1003);		// socket_read() failed
+define("MC_ERR_SOCKET_READ", 1003);	// socket_read() failed
 define("MC_ERR_SOCKET_CONNECT", 1004);	// failed to connect to host
-define("MC_ERR_DELETE", 1005);			// delete() did not recieve DELETED command
-define("MC_ERR_HOST_FORMAT", 1006);		// sock_to_host() invalid host format
-define("MC_ERR_HOST_DEAD", 1007);		// sock_to_host() host is dead
-define("MC_ERR_GET_SOCK", 1008);		// get_sock() failed to find a valid socket
-define("MC_ERR_SET", 1009);				// _set() failed to receive the STORED response
-define("MC_ERR_LOADITEM_HEADER", 1010);	// _load_items failed to receive valid data header
+define("MC_ERR_DELETE", 1005);		// delete() did not recieve DELETED command
+define("MC_ERR_HOST_FORMAT", 1006);	// sock_to_host() invalid host format
+define("MC_ERR_HOST_DEAD", 1007);	// sock_to_host() host is dead
+define("MC_ERR_GET_SOCK", 1008);	// get_sock() failed to find a valid socket
+define("MC_ERR_SET", 1009);		// _set() failed to receive the STORED response
+define("MC_ERR_GET_KEY", 1010);		// _load_items no values returned for key(s)
 define("MC_ERR_LOADITEM_END", 1011);	// _load_items failed to receive END response
 define("MC_ERR_LOADITEM_BYTES", 1012);	// _load_items bytes read larger than bytes available
-define("MC_ERR_GET", 1013);				// failed to get value associated with key
 
 
 /**
@@ -61,37 +59,37 @@ class MemCachedClient
      * array of servers no long available
      * @var array
      */
-	var $host_dead;
-	/**
-	 * array of open sockets
-	 * @var array
-	 */
-	var $cache_sock;
+    var $host_dead;
+    /**
+     * array of open sockets
+     * @var array
+     */
+    var $cache_sock;
     /**
      * determine if debugging is either on or off
      * @var bool
      */
-	var $debug;
-	/**
+    var $debug;
+    /**
      * array of servers to attempt to use, "host:port" string format
      * @var array
      */
-	var $servers;
-	/**
-	 * count of currently active connections to servers
-	 * @var int
-	 */
-	var $active;
-	/**
-	 * error code if one is set
-	 * @var int
-	 */
-	var $errno;
-	/**
-	 * string describing error
-	 * @var string
-	 */
-	var $errstr;
+    var $servers;
+    /**
+     * count of currently active connections to servers
+     * @var int
+     */
+    var $active;
+    /**
+     * error code if one is set
+     * @var int
+     */
+    var $errno;
+    /**
+     * string describing error
+     * @var string
+     */
+    var $errstr;
 
 
     /**
@@ -369,7 +367,7 @@ class MemCachedClient
 	 * objects on the same memcache server, so you could use the user's
 	 * unique id as the hash value.
 	 * Possible errors set are:
-	 *		MC_ERR_GET
+	 *		MC_ERR_GET_KEY
 	 *
 	 * @access public
 	 * @param string $key the key to retrieve
@@ -381,7 +379,7 @@ class MemCachedClient
 
 		if(!$val)
 		{
-			$this->errno = MC_ERR_GET;
+			$this->errno = MC_ERR_GET_KEY;
 			$this->errstr = "No value found for key $key";
 
 			if($this->debug)
@@ -458,8 +456,8 @@ class MemCachedClient
 
 		if($this->debug)
 		{
-			while(list($k, $v) = each($val))
-				$this->_debug("MemCache: got $k = $v");
+			while(list($k, $v) = @each($val))
+				$this->_debug("MemCache: got $k = $v\n");
 		}
 
 		return $val;
@@ -486,7 +484,7 @@ class MemCachedClient
 	 */
 	function incr($key, $value = 1)
 	{
-    	return $this->_incrdecr("incr", $key, $value);
+		return $this->_incrdecr("incr", $key, $value);
 	}
 
 
@@ -508,7 +506,7 @@ class MemCachedClient
 	 */
 	function decr($key, $value = 1)
 	{
-    	return $this->_incrdecr("decr", $key, $value);
+		return $this->_incrdecr("decr", $key, $value);
 	}
 
 
@@ -534,7 +532,7 @@ class MemCachedClient
 	 * @return int a string describing the error code given
 	 */
 	function error_string()
-    {
+	{
 		return $this->errstr;
 	}
 
@@ -591,8 +589,8 @@ class MemCachedClient
 			return FALSE;
 		}
 
-		if(($this->host_dead[$host] && $this->host_dead[$host] > $now) ||
-		($this->host_dead[$conn[0]] && $this->host_dead[$conn[0]] > $now))
+		if(@($this->host_dead[$host] && $this->host_dead[$host] > $now) ||
+		@($this->host_dead[$conn[0]] && $this->host_dead[$conn[0]] > $now))
 		{
 			$this->errno = MC_ERR_HOST_DEAD;
 			$this->errstr = "Host $host is not available.";
@@ -647,7 +645,7 @@ class MemCachedClient
 			$this->errstr = "No active servers are available";
 
 			if($this->debug)
-				$this->_debug("get_sock(): There are no active servers available");
+				$this->_debug("get_sock(): There are no active servers available.");
 
 			return FALSE;
 		}
@@ -676,7 +674,7 @@ class MemCachedClient
 		$tries = 0;
 		while($tries < 20)
 		{
-			$host = $buckets[$hv % count($buckets)];
+			$host = @$buckets[$hv % count($buckets)];
 			$sock = $this->sock_to_host($host);
 
 			if(is_resource($sock))
@@ -690,7 +688,7 @@ class MemCachedClient
 		$this->errstr = "Unable to retrieve a valid socket.";
 
 		if($this->debug)
-			$this->_debug("get_sock(): Unable to retrieve a valid socket");
+			$this->_debug("get_sock(): Unable to retrieve a valid socket.");
 
 		return FALSE;
 	}
@@ -720,7 +718,7 @@ class MemCachedClient
 			$this->errstr = "No active servers are available";
 
 			if($this->debug)
-				$this->_debug("_incrdecr(): There are no active servers available");
+				$this->_debug("_incrdecr(): There are no active servers available.");
 
 			return FALSE;
 		}
@@ -732,7 +730,7 @@ class MemCachedClient
 			$this->errstr = "Unable to retrieve a valid socket.";
 
 			if($this->debug)
-				$this->_debug("_incrdecr(): Invalid socket returned by get_sock()");
+				$this->_debug("_incrdecr(): Invalid socket returned by get_sock().");
 
 			return FALSE;
 		}
@@ -756,7 +754,7 @@ class MemCachedClient
 				$this->errno = MC_ERR_SOCKET_WRITE;
 				$this->errstr = "Failed to write to socket.";
 
-            	if($this->debug)
+				if($this->debug)
 				{
 					$sockerr = socket_last_error($sock);
 					$this->_debug("_incrdecr(): socket_write() returned FALSE. Error $errno: ".socket_strerror($sockerr));
@@ -810,7 +808,7 @@ class MemCachedClient
 			$this->errstr = "No active servers are available";
 
 			if($this->debug)
-				$this->_debug("_set(): No active servers are available");
+				$this->_debug("_set(): No active servers are available.");
 
 			return FALSE;
 		}
@@ -822,7 +820,7 @@ class MemCachedClient
 			$this->errstr = "Unable to retrieve a valid socket.";
 
 			if($this->debug)
-				$this->_debug("_set(): Invalid socket returned by get_sock()");
+				$this->_debug("_set(): Invalid socket returned by get_sock().");
 
 			return FALSE;
 		}
@@ -835,7 +833,7 @@ class MemCachedClient
 		// if the value is not scalar, we need to serialize it
 		if(!is_scalar($val))
 		{
-        	$val = serialize($val);
+			$val = serialize($val);
 			$flags |= 1;
 		}
 
@@ -860,7 +858,7 @@ class MemCachedClient
 				$this->errno = MC_ERR_SOCKET_WRITE;
 				$this->errstr = "Failed to write to socket.";
 
-            	if($this->debug)
+				if($this->debug)
 				{
 					$errno = socket_last_error($sock);
 					$this->_debug("_set(): socket_write() returned FALSE. Error $errno: ".socket_strerror($errno));
@@ -897,7 +895,7 @@ class MemCachedClient
 		$this->errstr = "Failed to receive the STORED response from the server.";
 
 		if($this->debug)
-			$this->_debug("_set(): Did not receive STORED as the server response! Received $l_szResponse instead");
+			$this->_debug("_set(): Did not receive STORED as the server response! Received $l_szResponse instead.");
 
 		return FALSE;
 	}
@@ -908,7 +906,7 @@ class MemCachedClient
 	 * Possible errors set are:
 	 *		MC_ERR_SOCKET_WRITE
 	 *		MC_ERR_SOCKET_READ
-	 *		MC_ERR_LOADITEM_HEADER
+	 *		MC_ERR_GET_KEY
 	 *		MC_ERR_LOADITEM_END
 	 *		MC_ERR_LOADITEM_BYTES
 	 *
@@ -948,7 +946,7 @@ class MemCachedClient
 				$this->errno = MC_ERR_SOCKET_WRITE;
 				$this->errstr = "Failed to write to socket.";
 
-            	if($this->debug)
+				if($this->debug)
 				{
 					$errno = socket_last_error($sock);
 					$this->_debug("_load_items(): socket_write() returned FALSE. Error $errno: ".socket_strerror($errno));
@@ -1002,12 +1000,12 @@ class MemCachedClient
 				}
 				else
 				{
-					$this->errno = MC_ERR_LOADITEM_HEADER;
-					$this->errstr = "Failed to receive a vaild header from server.";
+					$this->errno = MC_ERR_GET_KEY;
+					$this->errstr = "Requested key(s) returned no values.";
 
 					// something went wrong, we never recieved the header
 					if($this->debug)
-						$this->_debug("_load_items(): Failed to recieve valid header!");
+						$this->_debug("_load_items(): Requested key(s) returned no values.");
 
 					return FALSE;
 				}
@@ -1048,7 +1046,7 @@ class MemCachedClient
 					$this->errno = MC_ERR_LOADITEM_END;
 					$this->errstr = "Failed to receive END response from server.";
 
-                	if($this->debug)
+					if($this->debug)
 						$this->_debug("_load_items(): Failed to receive END. Received $end instead.");
 
 					return FALSE;
@@ -1090,10 +1088,17 @@ class MemCachedClient
 		return $hash;
 	}
 
-        function _debug($text) {
-                print $text . "\r\n";
-        }
+    /**
+     * function that can be overridden to handle debug output
+     * by default debug info is print to the screen
+     *
+     * @access private
+     * @param $text string to output debug info
+     */
+    function _debug($text)
+    {
+		print $text . "\r\n";
+    }
 }
 
 ?>
-
