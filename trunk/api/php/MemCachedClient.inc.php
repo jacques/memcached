@@ -8,7 +8,7 @@
  * Translated from Brad Fitzpatrick's <brad@danga.com> MemCached Perl client
  */
 
-define("MC_VERSION", "1.0.1");
+define("MC_VERSION", "1.0.4");
 define("MC_BUFFER_SZ", 1024);
 
 class MemCachedClient
@@ -134,6 +134,9 @@ class MemCachedClient
 	// like get() but takes an array of keys
 	function get_multi($keys)
 	{
+		$sock_keys = array();
+		$socks = array();
+
 		if(!$this->active)
 			return null;
 
@@ -151,14 +154,8 @@ class MemCachedClient
 			{
 				$k = is_array($k) ? $k[1] : $k;
 
-				if(!is_array($sock_keys))
-					$sock_keys = array();
-
-				if(!is_array($sock_keys[$sock]))
+				if(@!is_array($sock_keys[$sock]))
 					$sock_keys[$sock] = array();
-
-				if(!is_array($socks))
-					$socks = array();
 
 				// if $sock_keys[$sock] doesn't exist, create it
 				if(!$sock_keys[$sock])
@@ -208,8 +205,8 @@ class MemCachedClient
 		if(count($conn) != 2)
 			return 0;
 
-		if(($host_dead[$host] && $host_dead[$host] > $now) ||
-		($host_dead[$conn[0]] && $host_dead[$conn[0]] > $now))
+		if(($this->host_dead[$host] && $this->host_dead[$host] > $now) ||
+		($this->host_dead[$conn[0]] && $this->host_dead[$conn[0]] > $now))
 			return 0;
 
 		// connect to the server, if it fails, add it to the host_dead
@@ -218,7 +215,7 @@ class MemCachedClient
 		// we need surpress the error message if a connection fails
 		if(!@socket_connect($sock, $conn[0], $conn[1]))
 		{
-			$host_dead[$host]=$host_dead[$conn[0]]=$now+60+intval(rand(0, 10));
+			$this->host_dead[$host]=$this->host_dead[$conn[0]]=$now+60+intval(rand(0, 10));
 
 			// only print an error if in debug mode
 			if($this->debug)
@@ -566,3 +563,12 @@ Ryan Gilfether <hotrodder@rocketmail.com>
 http://www.gilfether.com
 */
 ?>
+
+
+
+
+
+
+
+
+
