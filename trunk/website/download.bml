@@ -7,7 +7,7 @@ body<=
 <p>The server is licensed under the BSD License.  Read the <a href="http://cvs.danga.com/browse.cgi/wcmtools/memcached/ChangeLog?rev=HEAD&amp;content-type=text/plain">ChangeLog</a> for details on what's new.</p>
 
 <ul>
-<li><a href="dist/memcached-1.1.9.tar.gz">memcached-1.1.9.tar.gz</a> -- Oct 9, 2003
+<li><a href="dist/memcached-1.1.10.tar.gz">memcached-1.1.10.tar.gz</a> -- Dec 30, 2003
 </ul>
 
 <?h1 Download Client APIs h1?>

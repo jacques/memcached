@@ -4,6 +4,10 @@ body<=
 
 <?h1 News h1?>
 
+<p><b>2003-12-30:</b> Version 1.1.10 <a
+href="download.bml">released</a>.  Now includes a command to wipe
+the entire cache.
+
 <p><b>2003-10-09:</b> Version 1.1.9 <a
 href="download.bml">released</a>, now with better network performance,
 better portability, setuid support, and a fix for a rare crash
