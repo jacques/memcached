@@ -16,11 +16,11 @@ body<=
 <p>These people are (or reportedly are, or were) working on memcache support to speed up their sites.</p>
 
 <ul>
-<li><b><a href="http://www.everything2.com/">Everything2</a></b> -- adding <?memd?> support to the ecore nodecache over at <a href="http://www.everydevel.com">everydevel.com</a>.</li>
+<li><b><a href="http://www.everything2.com/">Everything2</a></b> -- <a href="http://lists.danga.com/pipermail/memcached/2003-August/000044.html">adding support</a> for <?memd?> to the ecore nodecache over at <a href="http://www.everydevel.com">everydevel.com</a>.</li>
 
 <li><b><a href="http://www.sourceforge.net/">SourceForge</a></b> -- adding support, which is why the Python API for <?memd?> was created.</li>
 
-<li><b><a href="http://www.wikipedia.org/">WikiPedia</a></b> -- Brion Vibber is adding support, since WikiPedia has been plagued with poor performance lately, running on their minimal hardware.</li>
+<li><b><a href="http://www.wikipedia.org/">WikiPedia</a></b> -- Brion Vibber is <a href="http://mail.wikipedia.org/pipermail/wikitech-l/2003-August/005514.html">adding support</a>, since WikiPedia has been plagued with poor performance lately, running on their minimal hardware.</li>
 
 </ul>
 
