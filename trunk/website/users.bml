@@ -10,6 +10,18 @@ body<=
 
 <li><b><a href="http://www.slashdot.org/">Slashdot</a></b> -- I showed Jamie McCarthy <?memd?> at OSCON 2003 and how we use it on LiveJournal (including our <?memd?>-farm stats page) and he started frothing at the mouth and began implementing it that night in his hotel room.  Now Slashdot uses it for caching comments in their rendered form, saving both DB load and web CPU load.  They're reportedly working on using <?memd?> in more parts of their code.</li>
 
+<li><b><a href="http://www.wikipedia.org/">WikiPedia</a></b> -- Brion Vibber added support to WikiPedia's MediaWiki backend.  ( <a href="http://mail.wikipedia.org/pipermail/wikitech-l/2003-August/005514.html">original announcement</a>).</li>
+
+<li><b><a href="http://vampirefreaks.com">VampireFreaks</a></b>:
+<i>"Hey man. I just wanted to thank you for memcached, I just started
+using it on http://vampirefreaks.com , a site which gets over a
+million page hits a day and has been really slowing down the server.
+I've already implemented memcached in a few key spots which determine
+the number of users online as well as the number of current users, and
+it seems to have helped a lot, I am sure I will be putting it into
+more parts of the code as well.  Feel free to put us on the memcached
+users page if you like."</i></li>
+
 </ul>
 
 <?h1 Coming soon... h1?>
@@ -20,7 +32,6 @@ body<=
 
 <li><b><a href="http://www.sourceforge.net/">SourceForge</a></b> -- adding support, which is why the Python API for <?memd?> was created.</li>
 
-<li><b><a href="http://www.wikipedia.org/">WikiPedia</a></b> -- Brion Vibber is <a href="http://mail.wikipedia.org/pipermail/wikitech-l/2003-August/005514.html">adding support</a>, since WikiPedia has been plagued with poor performance lately, running on their minimal hardware.</li>
 
 </ul>
 
