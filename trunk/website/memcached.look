@@ -12,6 +12,7 @@ page<=
 <?link news.bml|News link?>
 <?link download.bml|Download link?>
 <?link apis.bml|Client APIs link?>
+<?link http://lists.danga.com/mailman/listinfo/memcached|Mailing List link?>
 </div>
 
 %%body%%
