@@ -54,10 +54,10 @@ out there would care to improve it.</p>
 
 
 <?h1 Java API h1?>
-<p>A Java API is now available, but it hasn't seen production use either.  Please let us know your experiences with it:</p>
+<p>A Java API is now available and in use by a few people.  Please join the mailing list and let us know your experiences with it.</p>
 
 <ul>
-<li><a href="dist/java-memcached-0.9.0.tar.gz">java-memcached-0.9.0.tar.gz</a>, GPL license.
+<li><a href="dist/java-memcached-0.9.1.tar.gz">java-memcached-0.9.1.tar.gz</a>, GPL license.
 [<a href="http://cvs.danga.com/browse.cgi/wcmtools/memcached/api/java/CHANGELOG.txt?rev=HEAD&amp;content-type=text/plain">ChangeLog</a>]
 </ul>
 
