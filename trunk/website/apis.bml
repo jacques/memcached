@@ -43,12 +43,27 @@ out there would care to improve it.</p>
 
 <p>Please contact us to take over its development.</p>
 
+<?h1 Ruby API h1?>
+<p>A Ruby API is available from Michael Granger at:</p>
+
+<ul>
+<li><a href="http://www.deveiate.org/code/Ruby-MemCache.html">http://www.deveiate.org/code/Ruby-MemCache.html</a></li>
+</ul>
+
 
 <?h1 Java API h1?>
 <p>A Java API is maintained by <a href="mailto:greg@meetup.com">Greg Whalin</a> from <a href="http://www.meetup.com/">Meetup.com</a>.  You can find that library here:
 
 <ul>
 <li><a href="http://www.whalin.com/memcached/">http://www.whalin.com/memcached/</a> -- Java API for memcached
+</ul>
+
+<?h1 C API h1?>
+<p>Multiple C libraries for memcached exist:</p>
+<ul>
+<li><a href="http://www.outoforder.cc/projects/libs/apr_memcache/">apr_memcache</a> by Paul Querna; Apache Software License version 2.0</li>
+
+<li><a href="http://people.freebsd.org/~seanc/libmemcache/">libmemcache</a> by Sean Chittenden; BSD license.</li>
 </ul>
 
 
