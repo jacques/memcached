@@ -38,6 +38,25 @@ sub get_foo_object {
 <p>Regardless of what database you use (MS-SQL, Oracle, Postgres, MysQL-InnoDB, etc..), there's a lot of overhead in implementing <a href="http://www.wikipedia.org/wiki/ACID">ACID</a> properties in a RDBMS, especially when disks are involved, which means queries are going to block.  For databases that aren't ACID-compliant (like MySQL-MyISAM), that overhead doesn't exist, but reading threads block on the writing threads.</p>
 <p><?memd?> never blocks.  See the "Is memcached fast?" question below.</p>
 
+<?h1 What about shared memory? h1?>
+
+<p>The first thing people generally do is cache things within their
+web processes.  But this means your cache is duplicated multiple
+times, once for each mod_perl/PHP/etc thread.  This is a waste of
+memory and you'll get low cache hit rates.  If you're using a
+multi-threaded language or a shared memory API (IPC::Shareable, etc),
+you can have a global cache for all threads, but it's per-machine.  It doesn't scale to multiple machines.
+Once you have 20 webservers, those 20 independent caches start to look
+just as silly as when you had 20 threads with their own caches on a
+single box.  (plus, shared memory is typically laden with limitations)</p>
+
+<p>The <?memd?> server and clients work together to implement one
+global cache across as many machines as you have.  In fact, it's
+recommended you run both web nodes (which are typically memory-lite
+and CPU-hungry) and memcached processes (which are memory-hungry and
+CPU-lite) on the same machines.  This way you'll save network
+ports.</p>
+
 <?h1 What about MySQL 4.x query caching? h1?>
 <p>MySQL query caching is less than ideal, for a number of reasons:</p>
 <ul class='spaced'>
