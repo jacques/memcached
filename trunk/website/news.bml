@@ -4,6 +4,9 @@ body<=
 
 <?h1 News h1?>
 
+<p><b>2003-07-29:</b> Version 1.1.7 <a href="download.bml">released</a>.
+The client APIs are now distributed separately.</p>
+
 <p><b>2003-06-30:</b> Version 1.1.6 <a
 href="download.bml">released</a>.  Many great changes.</p>
 
