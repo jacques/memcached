@@ -16,6 +16,7 @@ page<=
 
 %%body%%
 
+<div class='footer'>Brad Fitzpatrick &lt;brad@danga.com&gt;</div>
 </body>
 </html>
 <=page

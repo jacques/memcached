@@ -47,3 +47,10 @@ div.exampletitle {
 ul.spaced li { margin-top: 0.7em; }
 
 a.barlink:active { background: yellow; }
+
+div.footer {
+   margin: 30px -30px -30px -30px;
+   padding: 5px;
+   font-size: smaller;
+   font-style: italic;
+}

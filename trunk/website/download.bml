@@ -2,8 +2,17 @@
 wintitle=>download
 body<=
 
-<?h1 Download Server h1?>
-<p>The server is licensed under the <b>GPL</b>.  See the included <tt>LICENSE</tt> file for details.</p>
+<?h1 Download h1?>
+
+<p>The server is licensed under the GNU General Public License.  The
+Perl library, included, is licensed under either the Artistic License
+or the GPL.  See its POD documentation for details.
+
+</p>
+
+<ul>
+<li><a href="memcached-1.0.tar.gz">memcached-1.0.tar.gz</a> -- June 10, 2003</li>
+</ul>
 
 
 <=body

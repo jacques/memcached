@@ -2,14 +2,19 @@
 wintitle=>client apis
 body<=
 
-<?h1 Perl API h1?>
-<p>...</p>
+<?h1 Perl API h1?> <p> An object-oriented Perl module
+(<tt>MemCachedClient.pm</tt>) is included in the distribution (<a
+href="download.bml">download</a>) under the directory
+<tt>api/perl/</tt>.<p>
+
+<p>The API takes advantage of the server's opaque flag support and sets its "complex" flag whenever the object being stored or retrieved isn't a plain scalar.  In that case, the <tt>Storable</tt> module is used to freeze and thaw the value automatically going in and out of the memcached.</p>
 
 <?h1 PHP API h1?>
-<p>...</p>
+<p>Volunteers?</p>
 
-<?h1 Java API h1?>
-<p>...</p>
+<?h1 Java API h1?> <p>Volunteers?  (I imagine it storing ints,
+Strings, and Objects implementing the Serializable interface, just
+like the Perl API does using Storable)</p>
 
 <=body
 page?>
