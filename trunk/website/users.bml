@@ -26,7 +26,13 @@ users page if you like."</i></li>
 
 <li><b><a href="http://www.revelex.com/">Revelex</a></b>: <i>"... We have tried using MySQL, NFS-mounted flat-files and even NFS-mounted RAM drives to no avail. To date, only memcached has been able to keep up with our needs. ..."</i></li>
 
-
+<li><b><a href="http://www.howardstern.com/">HowardStern.com</a></b>: <i>"We've been struggling to keep the hardware matched to the traffic
+level and ever-growing database size. I've now implemented memcached
+across major sections of the site and the vBulletin-based forum. We're
+using three memcached servers to support the one large mySQL server.
+The performance improvement has been tremendous and it allows me to
+have an elegant memory caching solution always available instead of
+my own cache on the webservers' filesystems, as I had been doing."</i></li>
 
 </ul>
 
