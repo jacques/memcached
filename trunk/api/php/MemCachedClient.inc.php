@@ -8,7 +8,7 @@
  * Translated from Brad Fitzpatrick's <brad@danga.com> MemCached Perl client
  */
 
-define("MC_VERSION", "1.0.4");
+define("MC_VERSION", "1.0.6");
 define("MC_BUFFER_SZ", 1024);
 
 class MemCachedClient
@@ -72,12 +72,17 @@ class MemCachedClient
 	function delete($key)
 	{
 		if(!$this->active)
-			return 0;
+		{
+			if($this->debug)
+				print "delete(): There are no active servers available\r\n";
+
+			return FALSE;
+		}
 
 		$sock = $this->get_sock($key);
 
-		if(!$sock)
-			return 0;
+		if(!is_resource($sock))
+			return FALSE;
 
 		if(is_array($key))
 			$key = $key[1];
@@ -87,45 +92,80 @@ class MemCachedClient
 		$cmd_len = strlen($cmd);
 		$offset = 0;
 
+		// now send the command
 		while($offset < $cmd_len)
-			$offset += socket_write($sock, substr($cmd, $offset, MC_BUFFER_SZ), MC_BUFFER_SZ);
+		{
+			$result = socket_write($sock, substr($cmd, $offset, MC_BUFFER_SZ), MC_BUFFER_SZ);
+
+			if($result !== FALSE)
+				$offset += $result;
+			else if($offset < $cmd_len)
+			{
+            	if($this->debug)
+				{
+					$errno = socket_last_error($sock);
+					print "_delete(): socket_write() returned FALSE. Error $errno: ".socket_strerror($errno)."\r\n";
+				}
+
+				return FALSE;
+			}
+		}
 
 		// now read the server's response
-		if(socket_read($sock, 7, PHP_NORMAL_READ) == "DELETED")
-			return 1;
+		if(($retval = socket_read($sock, MC_BUFFER_SZ, PHP_NORMAL_READ)) === FALSE)
+		{
+			if($this->debug)
+			{
+				$errno = socket_last_error($sock);
+				print "_delete(): socket_read() returned FALSE. Error $errno: ".socket_strerror($errno)."\r\n";
+			}
 
-		return 0;
+			return FALSE;
+		}
+
+		// remove the \r\n from the end
+		$retval = rtrim($retval);
+
+		// now read the server's response
+		if($retval == "DELETED")
+			return TRUE;
+
+        if($this->debug)
+			print "_delete(): Failed to receive DELETED response from server. Received $retval instead.\r\n";
+
+		return FALSE;
 	}
 
 
 	// Like set(), but only stores in memcache if the key doesn't already exist.
 	function add($key, $val, $exptime = 0)
 	{
-		$this->_set("add", $key, $val, $exptime);
+		return $this->_set("add", $key, $val, $exptime);
 	}
 
 
 	// Like set(), but only stores in memcache if the key already exists.
 	function replace($key, $val, $exptime = 0)
 	{
-		$this->_set("replace", $key, $val, $exptime);
+		return $this->_set("replace", $key, $val, $exptime);
 	}
 
 
 	// Unconditionally sets a key to a given value in the memcache.
 	function set($key, $val, $exptime = 0)
 	{
-		$this->_set("set", $key, $val, $exptime);
+		return $this->_set("set", $key, $val, $exptime);
 	}
 
 
-	// Retrieves a key from the memcache.
+	// Retrieves a key from the memcache and returns its value,
+	// else returns false.
 	function get($key)
 	{
 		$val =& $this->get_multi($key);
 
 		if(!$val)
-			return null;
+			return FALSE;
 
 		return $val[$key];
 	}
@@ -136,9 +176,10 @@ class MemCachedClient
 	{
 		$sock_keys = array();
 		$socks = array();
+		$val = 0;
 
 		if(!$this->active)
-			return null;
+			return FALSE;
 
 		if(!is_array($keys))
 		{
@@ -159,9 +200,9 @@ class MemCachedClient
 
 				// if $sock_keys[$sock] doesn't exist, create it
 				if(!$sock_keys[$sock])
-					array_push($socks, $sock);
+					$socks[] = $sock;
 
-				array_push($sock_keys[$sock], $k);
+				$sock_keys[$sock][] = $k;
 			}
 		}
 
@@ -186,6 +227,23 @@ class MemCachedClient
 	}
 
 
+	// increments a numerical value by the value given in $value
+	// otherwise assumes 1
+	// ONLY WORKS WITH NUMERIC VALUES
+	function incr($key, $value = "")
+	{
+    	return $this->_incrdecr("incr", $key, $value);
+	}
+
+
+	// decrements a numerical value by the value given in $value
+	// otherwise assumes 1
+	// ONLY WORKS WITH NUMERIC VALUES
+	function decr($key, $value = "")
+	{
+    	return $this->_incrdecr("decr", $key, $value);
+	}
+
 
 
 	/**************************************************
@@ -203,13 +261,23 @@ class MemCachedClient
 		// seperate the ip from the port, index 0 = ip, index 1 = port
 		$conn = explode(":", $host);
 		if(count($conn) != 2)
-			return 0;
+		{
+			if($this->debug)
+				print "sock_to_host(): Host address was not in the format of host:port\r\n";
+
+			return FALSE;
+		}
 
 		if(($this->host_dead[$host] && $this->host_dead[$host] > $now) ||
 		($this->host_dead[$conn[0]] && $this->host_dead[$conn[0]] > $now))
-			return 0;
+		{
+			if($this->debug)
+				print "sock_to_host(): The host $host is not available.\r\n";
 
-		// connect to the server, if it fails, add it to the host_dead
+			return FALSE;
+		}
+
+		// connect to the server, if it fails, add it to the host_dead below
 		$sock = socket_create (AF_INET, SOCK_STREAM, getprotobyname("TCP"));
 
 		// we need surpress the error message if a connection fails
@@ -217,11 +285,10 @@ class MemCachedClient
 		{
 			$this->host_dead[$host]=$this->host_dead[$conn[0]]=$now+60+intval(rand(0, 10));
 
-			// only print an error if in debug mode
 			if($this->debug)
-				print "sock_to_host(): Failed to connect to ".$conn[0].":".$conn[1]."\n";
+				print "sock_to_host(): Failed to connect to ".$conn[0].":".$conn[1]."\r\n";
 
-			return 0;
+			return FALSE;
 		}
 
 		// success, add to the list of sockets
@@ -231,11 +298,16 @@ class MemCachedClient
 	}
 
 
-	// returns the socket from the key
+	// returns the socket from the key, else FALSE
 	function get_sock($key)
 	{
 		if(!$this->active)
-			return null;
+		{
+			if($this->debug)
+				print "get_sock(): There are no active servers available\r\n";
+
+			return FALSE;
+		}
 
 		$hv = is_array($key) ? intval($key[0]) : $this->_hashfunc($key);
 
@@ -248,10 +320,10 @@ class MemCachedClient
 				if(is_array($v))
 				{
 					for($i = 1;  $i <= $v[1]; ++$i)
-						array_push($bu, $v[0]);
+						$bu[] =  $v[0];
 				}
 				else
-					array_push($bu, $v);
+					$bu[] = $v;
 			}
 
 			$this->buckets = $bu;
@@ -259,18 +331,90 @@ class MemCachedClient
 		}
 
 		$tries = 0;
-		while($tries++ < 20)
+		while($tries < 20)
 		{
 			$host = $this->buckets[$hv % $this->bucketcount];
 			$sock = $this->sock_to_host($host);
 
-			if($sock)
+			if(is_resource($sock))
 				return $sock;
 
 			$hv += $this->_hashfunc($tries);
+			++$tries;
 		}
 
-		return null;
+		if($this->debug)
+			print "get_sock(): get_sock(): Unable to retrieve a valid socket\r\n";
+
+		return FALSE;
+	}
+
+
+	// private function. increments or decrements a
+	// numerical value in memcached. this function is
+	// called from incr() and decr()
+	// ONLY WORKS WITH NUMERIC VALUES
+	function _incrdecr($cmdname, $key, $value)
+	{
+		if(!$this->active)
+		{
+			if($this->debug)
+				print "_incrdecr(): There are no active servers available\r\n";
+
+			return FALSE;
+		}
+
+		$sock = $this->get_sock($key);
+		if(!is_resource($sock))
+		{
+			if($this->debug)
+				print "_incrdecr(): Invalid socket returned by get_sock()\r\n";
+
+			return FALSE;
+		}
+
+		// something about stats
+
+		if($value == "")
+			$value = 1;
+
+		$cmd = "$cmdname $key $value\r\n";
+		$cmd_len = strlen($cmd);
+		$offset = 0;
+
+		// now send the command
+		while($offset < $cmd_len)
+		{
+			$result = socket_write($sock, substr($cmd, $offset, MC_BUFFER_SZ), MC_BUFFER_SZ);
+
+			if($result !== FALSE)
+				$offset += $result;
+			else if($offset < $cmd_len)
+			{
+            	if($this->debug)
+				{
+					$errno = socket_last_error($sock);
+					print "_incrdecr(): socket_write() returned FALSE. Error $errno: ".socket_strerror($errno)."\r\n";
+				}
+
+				return FALSE;
+			}
+		}
+
+		// now read the server's response
+		if(($retval = socket_read($sock, MC_BUFFER_SZ, PHP_NORMAL_READ)) === FALSE)
+		{
+			$errno = socket_last_error($sock);
+			print "_incrdecr(): socket_read() returned FALSE. Error $errno: ".socket_strerror($errno)."\r\n";
+		}
+
+		// strip the /r/n from the end
+		$retval = trim($retval);
+
+		if(!is_numeric($retval))
+			return FALSE;
+
+		return $retval;
 	}
 
 
@@ -278,11 +422,21 @@ class MemCachedClient
 	function _set($cmdname, $key, $val, $exptime = 0)
 	{
 		if(!$this->active)
-			return 0;
+		{
+			if($this->debug)
+				print "_set(): There are no active servers available\r\n";
+
+			return FALSE;
+		}
 
 		$sock = $this->get_sock($key);
-		if(!$sock)
-			return 0;
+		if(!is_resource($sock))
+		{
+			if($this->debug)
+				print "_set(): Invalid socket returned by get_sock()\r\n";
+
+			return FALSE;
+		}
 
 		$flags = 0;
 		$key = is_array($key) ? $key[1] : $key;
@@ -290,11 +444,17 @@ class MemCachedClient
 		$raw_val = $val;
 		if($val)
 		{
-			$val = serialize($val);
+			// we dont want to serialize a numeric value
+			// because memcache wont know how to incr or decr it
+			if(!is_numeric($val))
+				$val = serialize($val);
+
 			$flags |= 1;
 		}
 
 		$len = strlen($val);
+		if (!is_int($exptime))
+			$exptime = 0;
 
 		// send off the request
 		$cmd = "$cmdname $key $flags $exptime $len\r\n$val\r\n";
@@ -302,23 +462,47 @@ class MemCachedClient
 		$offset = 0;
 
 		while($offset < $cmd_len)
-			$offset += socket_write($sock, substr($cmd, $offset, MC_BUFFER_SZ), MC_BUFFER_SZ);
+		{
+			$result = socket_write($sock, substr($cmd, $offset, MC_BUFFER_SZ), MC_BUFFER_SZ);
+
+			if($result !== FALSE)
+				$offset += $result;
+			else if($offset < $cmd_len)
+			{
+            	if($this->debug)
+				{
+					$errno = socket_last_error($sock);
+					print "_set(): socket_write() returned FALSE. Error $errno: ".socket_strerror($errno)."\r\n";
+				}
+
+				return FALSE;
+			}
+		}
 
 		// now read the server's response
-		if(socket_read($sock, 6, PHP_NORMAL_READ) == "STORED")
+		if(($l_szResponse = socket_read($sock, 6, PHP_NORMAL_READ)) === FALSE)
+		{
+			if($this->debug)
+			{
+				$errno = socket_last_error($sock);
+				print "_set(): socket_read() returned FALSE. Error $errno: ".socket_strerror($errno)."\r\n";
+			}
+
+			return FALSE;
+		}
+
+		if($l_szResponse == "STORED")
 		{
 			if($this->debug)
 				print "MemCache: $cmdname $key = $raw_val\n";
 
-			return 1;
-		}
-		else
-		{
-			if($this->debug)
-				print "_set(): Did not receive STORED as the server response!\r\n";
+			return TRUE;
 		}
 
-		return 0;
+		if($this->debug)
+			print "_set(): Did not receive STORED as the server response! Received $l_szResponse instead\r\n";
+
+		return FALSE;
 	}
 
 
@@ -335,87 +519,127 @@ class MemCachedClient
 		}
 
 		foreach($sock_keys as $sk)
-		{
 			$cmd .= $sk." ";
-		}
 
 		$cmd .="\r\n";
 		$cmd_len = strlen($cmd);
 		$offset = 0;
 
 		while($offset < $cmd_len)
-			$offset += socket_write($sock, substr($cmd, $offset, MC_BUFFER_SZ), MC_BUFFER_SZ);
-
-		while(true)
 		{
-			$line = socket_read($sock, MC_BUFFER_SZ, PHP_NORMAL_READ);
-			if(preg_match("/^VALUE (\S+) (\d+) (\d+)\r$/s", $line, $matches))
+			$result = socket_write($sock, substr($cmd, $offset, MC_BUFFER_SZ), MC_BUFFER_SZ);
+
+			if($result !== FALSE)
+				$offset += $result;
+			else if($offset < $cmd_len)
 			{
-				$rk = $matches[1];
-				$flags = $matches[2];
-				$len = $matches[3];
-
-				if($flags)
-					$flags_array[$rk] = $flags;
-
-				$len_array[$rk] = $len;
-				$bytes_read = 0;
-				$buf = "";
-
-				while($line = socket_read($sock, MC_BUFFER_SZ, PHP_NORMAL_READ))
+            	if($this->debug)
 				{
-					// for some reason, we initally get a line containing only a /n
-					// so let skip if we only get a /n or /r
-					if($line == "\n" || $line == "\r")
-						continue;
-
-					$bytes_read += strlen($line);
-					$buf .= $line;
-
-
-					if($bytes_read == $len + 1)
-					{
-						$val[$rk] = substr($buf, 0, strlen($buf) - 1); // chop the \r
-						continue 2;
-					}
-
-
-					if($bytes_read > $len)
-					{
-						if($this->debug)
-							print "_load_items(): Received invalid data from the server!\r\n";
-
-						return 0;
-					}
+					$errno = socket_last_error($sock);
+					print "_load_items(): socket_write() returned FALSE. Error $errno: ".socket_strerror($errno)."\r\n";
 				}
 
-				continue;
+				return FALSE;
 			}
+		}
 
-			if(substr($line, 0, 3) == "END")
-			{
-				foreach($sock_keys as $sk)
-				{
-					if(!isset($val[$sk]))
-						continue;
+		$len = 0;
+		$buf = "";
+		$flags_array = array();
 
-					if(strlen($val[$sk]) != $len_array[$sk])
-						continue;
-
-					if($flags_array[$sk] & 1)
-						$val[$sk] = unserialize($val[$sk]);
-				}
-
-				return 1;
-			}
-
-			if(strlen($line) == 0)
+		// now read the response from the server
+		while($line = socket_read($sock, MC_BUFFER_SZ, PHP_BINARY_READ))
+		{
+			// check for a socket_read error
+			if($line === FALSE)
 			{
 				if($this->debug)
-					print "_load_items(): Failed to receive END response from server!\r\n";
+				{
+					$errno = socket_last_error($sock);
+					print "_load_items(): socket_read() returned FALSE. Error $errno: ".socket_strerror($errno)."\r\n";
+				}
 
-				return 0;
+				return FALSE;
 			}
+
+			if($len == 0)
+			{
+				if(preg_match("/^VALUE (\S+) (\d+) (\d+)\r$/s", $line, $matches))
+				{
+					$rk = $matches[1];
+					$flags = $matches[2];
+					$len = $matches[3];
+
+					if($flags)
+						$flags_array[$rk] = $flags;
+
+					$len_array[$rk] = $len;
+					$bytes_read = 0;
+
+
+					// get the left over data after the header is read
+					$line = substr($line, strpos($line, "\r\n")+1, strlen($line));
+				}
+				else
+				{
+					// something went wrong, we never recieved the header
+					if($this->debug)
+						print "_load_items(): Failed to recieve valid header!\r\n";
+
+					return FALSE;
+				}
+			}
+
+			if($line == "\r" || $line == "\n")
+				continue;
+
+			$bytes_read += strlen($line);
+			$buf .= $line;
+
+			// we read the all of the data, take in account
+			// for the /r/nEND/r/n
+			if($bytes_read == ($len + 7))
+			{
+				$end = substr($buf, $len+2, 3);
+				if($end == "END")
+				{
+					$val[$rk] = substr($buf, 0, $len);
+
+					foreach($sock_keys as $sk)
+					{
+						if(!isset($val[$sk]))
+							continue;
+
+						if(strlen($val[$sk]) != $len_array[$sk])
+							continue;
+
+						if($flags_array[$sk] & 1)
+						{
+							if(!is_numeric($val[$sk]))
+								$val[$sk] = unserialize($val[$sk]);
+						}
+					}
+
+					return TRUE;
+				}
+				else
+				{
+                	if($this->debug)
+						print "_load_items(): Failed to receive END. Received $end instead.\r\n";
+
+					return FALSE;
+				}
+			}
+
+			// take in consideration for the "\r\nEND\r\n"
+			if($bytes_read > ($len + 7))
+			{
+				if($this->debug)
+					print "_load_items(): Bytes read is greater than requested data size!\r\n";
+
+				return FALSE;
+			}
+
 		}
 	}
 
@@ -434,134 +658,19 @@ class MemCachedClient
 	}
 }
 
-
-
-
 /*
-METHODS:
-	// Takes one parameter, a array of options.  The most important key is
-	// options["servers"], but that can also be set later with the set_servers()
-	// method.  The servers must be an array of hosts, each of which is
-	// either a scalar of the form <10.0.0.10:11211> or an array of the
-	// former and an integer weight value.  (the default weight if
-	// unspecified is 1.)  It's recommended that weight values be kept as low
-	// as possible, as this module currently allocates memory for bucket
-	// distribution proportional to the total host weights.
-	// $options["debug"] turns the debugging on if set to true
-	MemCachedClient::MemCachedClient($options);
-
-	// sets up the list of servers and the ports to connect to
-	// takes an array of servers in the same format as in the constructor
-	MemCachedClient::set_servers($servers);
-
-	// Retrieves a key from the memcache.  Returns the value (automatically
-	// unserialized, if necessary) or null.
-	// The $key can optionally be an array, with the first element being the
-	// hash value, if you want to avoid making this module calculate a hash
-	// value.  You may prefer, for example, to keep all of a given user's
-	// objects on the same memcache server, so you could use the user's
-	// unique id as the hash value.
-	MemCachedClient::get($key);
-
-	// just like get(), but takes an array of keys
-	MemCachedClient::get_multi($keys)
-
-	// Unconditionally sets a key to a given value in the memcache.  Returns true
-	// if it was stored successfully.
-	// The $key can optionally be an arrayref, with the first element being the
-	// hash value, as described above.
-	MemCachedClient::set($key, $value, $exptime);
-
-	// Like set(), but only stores in memcache if the key doesn't already exist.
-	MemCachedClient::add($key, $value, $exptime);
-
-	// Like set(), but only stores in memcache if the key already exists.
-	MemCachedClient::replace($key, $value, $exptime);
-
-	// removes the key from the MemCache
-	MemCachedClient::delete($key);
-
-	// disconnects from all servers
-	MemCachedClient::disconnect_all();
-
-	// if $do_debug is set to true, will print out
-	// debugging info, else debug is turned off
-	MemCachedClient::set_debug($do_debug);
-
-	MemCachedClient::forget_dead_hosts();
-
-
-EXAMPLE:
-	<?php
-	require("MemCachedClient.inc.php");
-
-	// set the servers, with the last one having an interger weight value of 3
-	$options["servers"] = array("10.0.0.15:11000","10.0.0.16:11001",array("10.0.0.17:11002", 3));
-	$options["debug"] = false;
-
-	$memc = new MemCachedClient($options);
-
-
-	// STORE AN ARRAY
-	$myarr = array("one","two", 3);
-	$memc->set("key_one", $myarr);
-	$val = $memc->get("key_one");
-	print $val[0]."\n";	// prints 'one'
-	print $val[1]."\n";	// prints 'two'
-	print $val[2]."\n";	// prints 3
-
-
-	print "\n";
-
-
-	// STORE A CLASS
-	class tester
-	{
-		var $one;
-		var $two;
-		var $three;
-	}
-
-	$t = new tester;
-	$t->one = "one";
-	$t->two = "two";
-	$t->three = 3;
-	$memc->set("key_two", $t);
-	$val = $memc->get("key_two");
-	print $val->one."\n";
-	print $val->two."\n";
-	print $val->three."\n";
-
-
-	print "\n";
-
-
-	// STORE A STRING
-	$memc->set("key_three", "my string");
-	$val = $memc->get("key_three");
-	print $val;		// prints 'my string'
-
-	$memc->delete("key_one");
-	$memc->delete("key_two");
-	$memc->delete("key_three");
-
-	$memc->disconnect_all();
-
-	?>
-
-
-This module is Copyright (c) 2003 Ryan Gilfether.
-All rights reserved.
-
-You may distribute under the terms of the GNU General Public License
-This is free software. IT COMES WITHOUT WARRANTY OF ANY KIND.
-
-See the memcached website:
-   http://www.danga.com/memcached/
-
-Ryan Gilfether <hotrodder@rocketmail.com>
-http://www.gilfether.com
-*/
+ * This module is Copyright (c) 2003 Ryan Gilfether.
+ * All rights reserved.
+ *
+ * You may distribute under the terms of the GNU General Public License
+ * This is free software. IT COMES WITHOUT WARRANTY OF ANY KIND.
+ *
+ * See the memcached website:
+ * http://www.danga.com/memcached/
+ *
+ * Ryan Gilfether <hotrodder@rocketmail.com>
+ * http://www.gilfether.com
+ */
 ?>
 
 
