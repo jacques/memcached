@@ -19,7 +19,8 @@ the memcached.</p>
 <?h1 PHP API h1?>
 
 <p>An object-oriented PHP module modelled after the Perl one is also
-included in the distribution.</p>
+included in the distribution.  It includes freeze/thaw support for serializing
+objects (like Perl's Storable).</p>
 
 <ul>
 <li><a href="dist/php-memcached-1.0.6.tar.gz">php-memcached-1.0.6.tar.gz</a>, GPL.
@@ -32,9 +33,27 @@ Please let us know your experiences with it, good or bad, so we can
 either remove this disclaimer, or fix any problems you find,
 respectively.</p>
 
+<?h1 Python API h1?>
+
+<p>An object-oriented Python module modelled after the Perl one is also
+included in the distribution.  It includes Pickle/cPickle support (like Perl's Storable).</p>
+
+<ul>
+<li><a href="dist/python-memcached-1.1.tar.gz">python-memcached-1.1.tar.gz</a>, Python license.
+[<a href="http://cvs.danga.com/browse.cgi/wcmtools/memcached/api/python/ChangeLog?rev=HEAD&amp;content-type=text/plain">ChangeLog</a>]
+</ul>
+
+<p>The Python API, while in use and tested, has not experienced the same
+level of severe beating as the Perl module in heavy production.
+Please let us know your experiences with it, good or bad, so we can
+either remove this disclaimer, or fix any problems you find,
+respectively.</p>
+
+
 <?h1 Java API h1?> <p>Volunteers?  (I imagine it storing ints,
 Strings, and Objects implementing the Serializable interface, just
 like the Perl API does using Storable)</p>
+
 
 <?h1 Protocol h1?> <p>To write a new client, check out the <a
 href="http://cvs.danga.com/browse.cgi/wcmtools/memcached/doc/protocol.txt?rev=HEAD&amp;content-type=text/plain">protocol
