@@ -4,7 +4,8 @@ body<=
 
 <?h1 News h1?>
 
-<p><b>2003-06-10:</b> Website not so bad now.</p>
+<p><b>2003-06-10:</b> Website not so bad now.  Files licensed.  Perl
+API separated and documented.  <a href="download.bml">1.0 release</a>.</p>
 
 <p><b>2003-05-30:</b> Server's stable.  Perl API's still LJ-specific
 (just need to just change the package name, basically).  Other APIs
