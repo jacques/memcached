@@ -33,6 +33,9 @@ Please let us know your experiences with it, good or bad, so we can
 either remove this disclaimer, or fix any problems you find,
 respectively.</p>
 
+<p>Alternatively, a new PHP module is being developed at: <a
+href="http://phpca.cytherianage.net/memcached/">http://phpca.cytherianage.net/memcached/</a>.</p>
+
 <?h1 Python API h1?>
 
 <p>An object-oriented Python module modelled after the Perl one is also

@@ -4,6 +4,11 @@ body<=
 
 <?h1 News h1?>
 
+<p><b>2003-10-09:</b> Version 1.1.9 <a
+href="download.bml">released</a>, now with better network performance,
+better portability, setuid support, and a fix for a rare crash
+(SIGPIPE) if a client dies.
+
 <p><b>2003-08-08:</b> We now have <a href="apis.bml">Python support</a>.</p>
 
 <p><b>2003-07-29:</b> Version 1.1.8 <a href="download.bml">released</a>.
