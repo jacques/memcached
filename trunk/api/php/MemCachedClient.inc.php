@@ -602,7 +602,7 @@ class MemCachedClient
 		}
 
 		// connect to the server, if it fails, add it to the host_dead below
-		$sock = socket_create (AF_INET, SOCK_STREAM, SOL_TCP);
+		$sock = socket_create (AF_INET, SOCK_STREAM, getprotobyname("TCP"));
 
 		// we need surpress the error message if a connection fails
 		if(!@socket_connect($sock, $conn[0], $conn[1]))
