@@ -4,9 +4,9 @@ body<=
 
 <?h1 Perl API h1?> 
 
-<p> An object-oriented Perl module:</p>
+<p> An object-oriented Perl module can be found on CPAN as <tt><b>Cache::Memcached</b></tt>, or downloaded here.</p>
 <ul>
-<li><a href="dist/MemCachedClient-1.0.9.tar.gz">MemCachedClient-1.0.9.tar.gz</a>, GPL/Artistic.
+<li><a href="dist/Cache-Memcached-1.0.10.tar.gz">Cache-Memcached-1.0.10.tar.gz</a>, GPL/Artistic.
 [<a href="http://cvs.danga.com/browse.cgi/wcmtools/memcached/api/perl/ChangeLog?rev=HEAD&amp;content-type=text/plain">ChangeLog</a>]
 </ul>
 
