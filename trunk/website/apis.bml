@@ -43,16 +43,21 @@ included in the distribution.  It includes Pickle/cPickle support (like Perl's S
 [<a href="http://cvs.danga.com/browse.cgi/wcmtools/memcached/api/python/ChangeLog?rev=HEAD&amp;content-type=text/plain">ChangeLog</a>]
 </ul>
 
-<p>The Python API, while in use and tested, has not experienced the same
-level of severe beating as the Perl module in heavy production.
-Please let us know your experiences with it, good or bad, so we can
-either remove this disclaimer, or fix any problems you find,
-respectively.</p>
+<p>The Python API, while tested, has not experienced real-world production use.
+Also, its performance could be optimized (less syscalls parsing responses), if anybody
+out there would care to improve it.</p>
+
+<p>Please contact us to take over its development.</p>
 
 
-<?h1 Java API h1?> <p>Volunteers?  (I imagine it storing ints,
-Strings, and Objects implementing the Serializable interface, just
-like the Perl API does using Storable)</p>
+<?h1 Java API h1?>
+<p>A Java API is now available, but it hasn't seen production use either.  Please let us know your experiences with it:</p>
+
+<ul>
+<li><a href="dist/java-memcached-0.9.0.tar.gz">java-memcached-0.9.0.tar.gz</a>, GPL license.
+[<a href="http://cvs.danga.com/browse.cgi/wcmtools/memcached/api/java/CHANGELOG.txt?rev=HEAD&amp;content-type=text/plain">ChangeLog</a>]
+</ul>
+
 
 
 <?h1 Protocol h1?> <p>To write a new client, check out the <a
