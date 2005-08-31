@@ -2,7 +2,7 @@
 wintitle=>client apis
 body<=
 
-<?h1 Perl API h1?> 
+<?h1 Perl API h1?>
 
 <p> An object-oriented Perl module can be found on CPAN as <tt>Cache::Memcached</tt> or downloaded here.</p>
 <ul>
@@ -18,29 +18,11 @@ the memcached.</p>
 
 <?h1 PHP API h1?>
 
-<p>Several PHP APIs are available:</p>
-
-<ul>
-<li><a href="http://phpca.cytherianage.net/memcached/">http://phpca.cytherianage.net/memcached/</a></li>
-<li><a href="http://pecl.php.net/package/memcache/">http://pecl.php.net/package/memcache/</a> -- implemented in C, but doesn't support multiple memcached servers</li>
-<li>... (many others, send me links?)</li>
-</ul>
+<p>There are tons of PHP libraries available, in different conditions.  The community hasn't yet decided which is the best.  When they do, let me know.  For now I'll let you search Google rather than link any.</p>
 
 <?h1 Python API h1?>
 
-<p>An object-oriented Python module modelled after the Perl one is also
-included in the distribution.  It includes Pickle/cPickle support (like Perl's Storable).</p>
-
-<ul>
-<li><a href="dist/python-memcached-1.2.tar.gz">python-memcached-1.2.tar.gz</a>, Python license.
-[<a href="http://cvs.danga.com/browse.cgi/wcmtools/memcached/api/python/ChangeLog?rev=HEAD&amp;content-type=text/plain">ChangeLog</a>]
-</ul>
-
-<p>The Python API, while tested, has not experienced real-world production use.
-Also, its performance could be optimized (less syscalls parsing responses), if anybody
-out there would care to improve it.</p>
-
-<p>Please contact us to take over its development.</p>
+<p>The Python client we'd previously released was just a prototype, and we don't have regular Python programmers on hand.  The folks at Tummy.com have took over maintenance.  See <a href="ftp://ftp.tummy.com/pub/python-memcached/">ftp://ftp.tummy.com/pub/python-memcached/</a> for the latest versions.</p>
 
 <?h1 Ruby API h1?>
 <p>A Ruby API is available from Michael Granger at:</p>
