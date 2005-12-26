@@ -34,6 +34,11 @@ The performance improvement has been tremendous and it allows me to
 have an elegant memory caching solution always available instead of
 my own cache on the webservers' filesystems, as I had been doing."</i></li>
 
+<li><b><a href="http://www.kayak.com/">Kayak.com</a></b>: memcached allowed
+Kayak.com to increase capacity of our real-time flight and hotel
+search engine by one order of magnitude.</li>
+
+
 </ul>
 
 <?h1 Coming soon... h1?>
