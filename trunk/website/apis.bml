@@ -39,6 +39,13 @@ the memcached.</p>
 <li><a href="http://www.whalin.com/memcached/">http://www.whalin.com/memcached/</a> -- Java API for memcached
 </ul>
 
+<?h1 C# API h1?>
+<p>A C# API is available at:
+
+<ul>
+<li><a href="https://sourceforge.net/projects/memcacheddotnet/">https://sourceforge.net/projects/memcacheddotnet/</a>
+</ul>
+
 <?h1 C API h1?>
 <p>Multiple C libraries for memcached exist:</p>
 <ul>
