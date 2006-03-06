@@ -2,7 +2,7 @@
 wintitle=>users
 body<=
 
-<?h1 Who's using <?memd?>? h1?> 
+<?h1 Who's using <?memd?>? h1?>
 <p>This is an initial list of <?memd?> users that I've heard about.  Please mail me if you're using it, optionally with a little description of how, and I'll add you to this page.</p>
 
 <ul>
@@ -37,6 +37,18 @@ my own cache on the webservers' filesystems, as I had been doing."</i></li>
 <li><b><a href="http://www.kayak.com/">Kayak.com</a></b>: memcached allowed
 Kayak.com to increase capacity of our real-time flight and hotel
 search engine by one order of magnitude.</li>
+
+<li><b><a href="http://www.fotolog.com/">Fotolog.com</a></b>:  "I have a new memcached user to add to your list: we here at Fotolog, the
+world's largest photo blogging community, now use it and we love it.  I just rolled our first code to use it into production
+today and it has been a lifesaver.  I can't wait to start using it in places where we had been relying on Berkeley databases to
+offload some database work.  We are not some wimpy million page a day site, either.  Fotolog is a billion+ pages/month site (35
+to 40 million views/day is pretty typical for us).  We had recently overcome some significant DB-related performance issues
+which allowed our site traffic to explode, and it started to bog down again under the heavy traffic load (getting back up
+towards 10 seconds for a page to load sometimes during the peak periods).  The servers were churning away each recreating a list
+every time when it could easily be shared in the same form for at least 5 or 10 minutes.  So we introduced memcache, creating a
+distributed 30-server cluster with 4 gigs available in total and made a very minor code mod to use memcache, and our peak period
+load times dropped back down to the 2 second or so range.  It has allowed for continued growth and incredible efficiency.  I
+can't say when I've ever been so pleased with something that worked so simply."</li>
 
 
 </ul>
