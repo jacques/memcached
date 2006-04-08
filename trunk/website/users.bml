@@ -64,6 +64,122 @@ can't say when I've ever been so pleased with something that worked so simply."<
 
 </ul>
 
+<!--
+
+Date: Fri, 24 Mar 2006 10:03:50 -0800
+From: John Kelley <jkelley@divxcorp.com>
+To: brad@danga.com
+Subject: Another proud memcached user
+
+Just thought I'd drop you a note to let you know that we've been using
+memcached on RedVsBlue.com for the past 9 months and we absolutely love
+it! Our DBs loads have gone down by about 60% and we've been able to
+implement some neat new features that we wouldn't have been about to do
+without it.
+
+Cheers,
+John Kelley
+
+
+-----------
+
+Hello brad!
+
+
+We are using memcached on www.gsmclub.pl - Polish biggest GSM vortal.
+
+It is really amazing how it can decrease server load and how simply it
+is to implement it on a site.  :)  We have started also to use it on
+every domain on our server cause it helps us a lot!  :)
+
+Good job!
+
+PS: If you are so kind please insert this testimonial on your users
+site: http://www.danga.com/memcached/users.bml
+
+Best regards,
+Krzysztof Milkowski
+-- admin@tophosting.pl
+
+
+
+
+
+
+
+Hey Brad,
+
+The page http://www.danga.com/memcached/users.bml says you're interested in
+hearing from other people using memcached. I'm not sure whether you're still
+interested in adding sites to that page, but here goes nothin'...
+
+I'm using it successfully in a couple of places:
+
+* On washingtonpost.com, every application I put together has used memcached.
+The biggest example of this is the U.S. Congress Votes Database,
+http://projects.washingtonpost.com/congress/ .
+
+* A personal project of mine, chicagocrime.org, uses memcached extensively.
+This site has gotten a fair bit of attention as one of the original Google
+Maps mashups.
+
+* Finally, the Python Web framework Django (which powers both the Washington
+Post stuff and chicagocrime.org) has some pretty sweet memcached bindings.
+See djangoproject.com and http://www.djangoproject.com/documentation/cache/
+if you're at all interested.
+
+Thanks very much for memcached!
+
+Adrian
+
+-- Adrian Holovaty Editor of editorial innovations, washingtonpost.com Personal stuff: holovaty.com | chicagocrime.org | djangoproject.com
+
+
+
+
+
+Date: Thu, 04 Nov 2004 10:43:39 -0700
+From: Myles Grant <myles@mylesgrant.com>
+To: brad@danga.com
+Subject: I'm now using Memcached
+
+Brad,
+
+I attended your memcached talk at OSCON 2004, and then later we all went
+to that Stonehenge party.  You gave me a ride home -- thanks for that.
+
+Anyway, I've just started using memcached on my site, blogskins.com, and
+since you want to be notified if people use it... here you go.
+
+BlogSkins gets decent traffic, and is still only a single dedicated
+server.  Lately, the load has been climbing to steadily unacceptable
+levels.  The culprit?  Tons of locked MySQL threads.  So today I
+installed Memcached and added it in a few strategic places.  The 3 stats
+in the upper right of every page (number of users/skins/downloads) are
+now pulled from memcached instead of doing a 'select count(id) from
+users/skins/downloads' on every page load.  Any time one of those stats
+would change (new user, new skin, etc), the value is simply deleted from
+the cache and refreshed on the next page load.
+
+I am also storing the user object for logged-in users instead of hitting
+the users table every page load.  The same strategy of deleting the
+cached value and waiting for a refresh on info change is used here.
+
+So far, memcached seems to be helping dramatically.  Load has dropped
+from the 20-30 range into the 0-2 range.  Hopefully it keeps up.  But
+this is a great improvement for a half hour's work.
+
+Thanks for an insanely useful tool.  I'm in love.
+
+-Myles
+
+
+
+
+
+
+
+-->
 
 <=body
 page?>
