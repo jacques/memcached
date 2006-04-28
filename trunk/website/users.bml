@@ -174,6 +174,17 @@ Thanks for an insanely useful tool.  I'm in love.
 -Myles
 
 
+From: timeless <time@digg.com>
+
+http://digg.com -- When I started at Digg, I recommended we give
+MemcacheD a try. I implemented the MemcacheD cluster and initial site
+mods to use it. Our page load times for /diggall (a popular URL on the
+site) went from an average of 5 seconds to an average of sub-second
+response times. Since then, our developers have gone wild with
+MemcacheD, using it in very sophisticated ways to make a lot of page
+load time improvements across the site. RAWK!
+
+
 
 
 
