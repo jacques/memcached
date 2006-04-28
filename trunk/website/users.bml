@@ -185,6 +185,30 @@ MemcacheD, using it in very sophisticated ways to make a lot of page
 load time improvements across the site. RAWK!
 
 
+------
+
+From: G Class <gclass@spamarrest.com>
+To: Brad Fitzpatrick <brad@danga.com>
+Subject: Memcached
+Parts/Attachments:
+   1   OK    ~15 lines  Text
+   2 Shown   ~33 lines  Text
+----------------------------------------
+
+Hey Bradfitz,
+?
+I thought I'd mention to you that we started using Memcached for some of our
+high frequency db queries and it has been working really well.? The daemon is
+stable and the saved data retrieval time has allowed us to implement features
+that would have been impractical through MySQL or session caching.
+?
+A big thanks to Danga for their contributions to the free software? community,
+--
+Gregory Class and Daryn Nakhuda
+Spam Arrest LLC
+http://spamarrest.com
+
+-----
 
 
 
