@@ -7,17 +7,21 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifndef WIN32
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/signal.h>
 #include <sys/resource.h>
+#include <unistd.h>
+#include <netinet/in.h>
 #include <fcntl.h>
+#include <errno.h>
+#else
+#include <Winsock2.h>
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
-#include <netinet/in.h>
-#include <errno.h>
 #include <event.h>
 #include <assert.h>
 
@@ -170,7 +174,7 @@ void *slabs_alloc(unsigned int size) {
     if (p->end_page_ptr) {
         void *ptr = p->end_page_ptr;
         if (--p->end_page_free) {
-            p->end_page_ptr += p->size;
+            (char*)(p->end_page_ptr) += p->size;
         } else {
             p->end_page_ptr = 0;
         }
@@ -269,9 +273,9 @@ int slabs_reassign(unsigned char srcid, unsigned char dstid) {
     if (p->killing == 0) p->killing = 1;
 
     slab = p->slab_list[p->killing-1];
-    slab_end = slab + POWER_BLOCK;
+    slab_end = (char*)slab + POWER_BLOCK;
     
-    for (iter=slab; iter<slab_end; iter+=p->size) {
+    for (iter=slab; iter<slab_end; (char*)iter+=p->size) {
         item *it = (item *) iter;
         if (it->slabs_clsid) {
             if (it->refcount) was_busy = 1;
@@ -302,7 +306,7 @@ int slabs_reassign(unsigned char srcid, unsigned char dstid) {
 
     /* this isn't too critical, but other parts of the code do asserts to
        make sure this field is always 0.  */
-    for (iter=slab; iter<slab_end; iter+=dp->size) {
+    for (iter=slab; iter<slab_end; (char*)iter+=dp->size) {
         ((item *)iter)->slabs_clsid = 0;
     }
 

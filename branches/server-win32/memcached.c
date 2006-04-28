@@ -16,9 +16,15 @@
  *  $Id$
  */
 
+#ifndef WIN32
 #include "config.h"
+#else
+#include "Win32-Code/config.h"
+#endif
+
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifndef WIN32
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/signal.h>
@@ -31,14 +37,20 @@
 #include <pwd.h>
 #include <sys/mman.h>
 #include <fcntl.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <unistd.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#else
+#include <Winsock2.h>
+#include <process.h>
+#include "Win32-Code/ntservice.h"
+#include "compat/bsd_getopt.h"
+#endif
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <time.h>
 #include <event.h>
 #include <assert.h>
@@ -89,7 +101,7 @@ void stats_reset(void) {
 
 void settings_init(void) {
     settings.port = 11211;
-    settings.interface.s_addr = htonl(INADDR_ANY);
+    settings.interf.s_addr = htonl(INADDR_ANY);
     settings.maxbytes = 64*1024*1024; /* default is 64MB */
     settings.maxconns = 1024;         /* to limit connections-related memory to about 5MB */
     settings.verbose = 0;
@@ -334,16 +346,20 @@ void process_stat(conn *c, char *command) {
         char temp[1024];
         pid_t pid = getpid();
         char *pos = temp;
+
+#ifndef WIN32
         struct rusage usage;
-        
         getrusage(RUSAGE_SELF, &usage);
+#endif
 
         pos += sprintf(pos, "STAT pid %u\r\n", pid);
         pos += sprintf(pos, "STAT uptime %lu\r\n", now - stats.started);
         pos += sprintf(pos, "STAT time %ld\r\n", now);
         pos += sprintf(pos, "STAT version " VERSION "\r\n");
+#ifndef WIN32
         pos += sprintf(pos, "STAT rusage_user %ld.%06ld\r\n", usage.ru_utime.tv_sec, usage.ru_utime.tv_usec);
         pos += sprintf(pos, "STAT rusage_system %ld.%06ld\r\n", usage.ru_stime.tv_sec, usage.ru_stime.tv_usec);
+#endif
         pos += sprintf(pos, "STAT curr_items %u\r\n", stats.curr_items);
         pos += sprintf(pos, "STAT total_items %u\r\n", stats.total_items);
         pos += sprintf(pos, "STAT bytes %llu\r\n", stats.curr_bytes);
@@ -392,6 +408,7 @@ void process_stat(conn *c, char *command) {
 #endif /* HAVE_STRUCT_MALLINFO */
 #endif /* HAVE_MALLOC_H */
 
+#ifndef WIN32
     if (strcmp(command, "stats maps") == 0) {
         char *wbuf;
         int wsize = 8192; /* should be enough */
@@ -431,6 +448,7 @@ void process_stat(conn *c, char *command) {
         close(fd);
         return;
     }
+#endif
 
     if (strncmp(command, "stats cachedump", 15) == 0) {
         char *buf;
@@ -520,10 +538,12 @@ void process_command(conn *c, char *command) {
         char key[251];
         int flags;
         time_t expire;
+        long _expire = 0;
         int len, res;
         item *it;
 
-        res = sscanf(command, "%*s %250s %u %ld %d\n", key, &flags, &expire, &len);
+        res = sscanf(command, "%*s %250s %u %ld %d\n", key, &flags, &_expire, &len);
+		expire = _expire;
         if (res!=4 || strlen(key)==0 ) {
             out_string(c, "CLIENT_ERROR bad command line format");
             return;
@@ -712,7 +732,8 @@ void process_command(conn *c, char *command) {
         char key[251];
         item *it;
         int res;
-        time_t exptime = 0;
+        time_t exptime;
+		long _exptime = 0;
 
         if (settings.managed) {
             int bucket = c->bucket;
@@ -727,7 +748,8 @@ void process_command(conn *c, char *command) {
             }
         }
 
-        res = sscanf(command, "%*s %250s %ld", key, &exptime);
+        res = sscanf(command, "%*s %250s %ld", key, &_exptime);
+		exptime = _exptime;
         it = assoc_find(key);
         if (!it) {
             out_string(c, "NOT_FOUND");
@@ -840,7 +862,8 @@ void process_command(conn *c, char *command) {
     }
 
     if (strncmp(command, "flush_all", 9) == 0) {
-        time_t exptime = 0;
+        time_t exptime;
+		long _exptime = 0;
         int res;
 
         if (strcmp(command, "flush_all") == 0) {
@@ -849,7 +872,8 @@ void process_command(conn *c, char *command) {
             return;
         }
 
-        res = sscanf(command, "%*s %ld", &exptime); 
+        res = sscanf(command, "%*s %ld", &_exptime); 
+		exptime = _exptime;
         if (res != 1) {
             out_string(c, "ERROR");
             return;
@@ -990,6 +1014,8 @@ void drive_machine(conn *c) {
     struct sockaddr addr;
     conn *newc;
     int res;
+	long int key_size;
+	long int value_size;
 
     while (!exit) {
         /* printf("state %d\n", c->state);*/
@@ -1227,8 +1253,8 @@ void drive_machine(conn *c) {
                     // add branch for binary mode
                     if (c->binary) {
                         c->ibuf[0] = 0x01; // key
-                        long int key_size   = htonl(it->nkey - 3);
-                        long int value_size = htonl(it->nbytes - 2);
+                        key_size   = htonl(it->nkey - 3);
+                        value_size = htonl(it->nbytes - 2);
                         /* XXX NOT SAFE ON 64 BIT FOR PROTOCOL REASONS
                            NEED TO RECODE TO USE 4 byte INTS ONLY */
                         memcpy(c->ibuf + 1, (char *)&key_size, sizeof(key_size));
@@ -1338,7 +1364,7 @@ int server_socket(int port) {
 
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
-    addr.sin_addr = settings.interface;
+    addr.sin_addr = settings.interf;
     if (bind(sfd, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
         perror("bind()");
         close(sfd);
@@ -1354,10 +1380,12 @@ int server_socket(int port) {
 
 /* invoke right before gdb is called, on assert */
 void pre_gdb () {
+#ifndef WIN32
     int i = 0;
     if(l_socket) close(l_socket);
     for (i=3; i<=500; i++) close(i); /* so lame */
     kill(getpid(), SIGABRT);
+#endif
 }
 
 struct event deleteevent;
@@ -1400,21 +1428,29 @@ void delete_handler(int fd, short which, void *arg) {
         
 void usage(void) {
     printf(PACKAGE " " VERSION "\n");
-    printf("-p <num>      port number to listen on\n");
-    printf("-l <ip_addr>  interface to listen on, default is INDRR_ANY\n");
-    printf("-d            run as a daemon\n");
-    printf("-r            maximize core file limit\n");
-    printf("-u <username> assume identity of <username> (only when run as root)\n");
-    printf("-m <num>      max memory to use for items in megabytes, default is 64 MB\n");
-    printf("-M            return error on memory exhausted (rather than removing items)\n");
-    printf("-c <num>      max simultaneous connections, default is 1024\n");
-    printf("-k            lock down all paged memory\n");
-    printf("-v            verbose (print errors/warnings while in event loop)\n");
-    printf("-vv           very verbose (also print client commands/reponses)\n");
-    printf("-h            print this help and exit\n");
-    printf("-i            print memcached and libevent license\n");
-    printf("-b            run a managed instanced (mnemonic: buckets)\n");
-    printf("-P <file>     save PID in <file>, only used with -d option\n");
+    printf("-p <num>          port number to listen on\n");
+    printf("-l <ip_addr>      interface to listen on, default is INDRR_ANY\n");
+#ifdef WIN32
+    printf("-d start          tell memcached to start\n");
+    printf("-d restart        tell running memcached to do a graceful restart\n");
+    printf("-d stop|shutdown  tell running memcached to shutdown\n");
+    printf("-d install        install memcached service\n");
+    printf("-d uninstall      uninstall memcached service\n");
+#else
+    printf("-d                run as a daemon\n");
+#endif
+    printf("-r                maximize core file limit\n");
+    printf("-u <username>     assume identity of <username> (only when run as root)\n");
+    printf("-m <num>          max memory to use for items in megabytes, default is 64 MB\n");
+    printf("-M                return error on memory exhausted (rather than removing items)\n");
+    printf("-c <num>          max simultaneous connections, default is 1024\n");
+    printf("-k                lock down all paged memory\n");
+    printf("-v                verbose (print errors/warnings while in event loop)\n");
+    printf("-vv               very verbose (also print client commands/reponses)\n");
+    printf("-h                print this help and exit\n");
+    printf("-i                print memcached and libevent license\n");
+    printf("-b                run a managed instanced (mnemonic: buckets)\n");
+    printf("-P <file>         save PID in <file>, only used with -d option\n");
     return;
 }
 
@@ -1484,6 +1520,80 @@ void usage_license(void) {
 	"THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
 	"(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF\n"
 	"THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+#ifdef WIN32
+	"This product includes software developed by the NetBSD\n"
+	"Foundation, Inc. and its contributors.\n"
+	"\n"
+	"[ bsd_getopts ]\n"
+	"\n"
+	"Copyright (c) 2000 The NetBSD Foundation, Inc.\n"
+	"All rights reserved.\n"
+	"\n"
+	"This code is derived from software contributed to The NetBSD Foundation\n"
+	"by Dieter Baron and Thomas Klausner.\n"
+	"\n"
+	"Redistribution and use in source and binary forms, with or without\n"
+	"modification, are permitted provided that the following conditions\n"
+	"are met:\n"
+	"1. Redistributions of source code must retain the above copyright\n"
+	"   notice, this list of conditions and the following disclaimer.\n"
+	"2. Redistributions in binary form must reproduce the above copyright\n"
+	"   notice, this list of conditions and the following disclaimer in the\n"
+	"   documentation and/or other materials provided with the distribution.\n"
+	"3. All advertising materials mentioning features or use of this software\n"
+	"   must display the following acknowledgement:\n"
+	"       This product includes software developed by the NetBSD\n"
+	"       Foundation, Inc. and its contributors.\n"
+	"4. Neither the name of The NetBSD Foundation nor the names of its\n"
+	"   contributors may be used to endorse or promote products derived\n"
+	"   from this software without specific prior written permission.\n"
+	"\n"
+	"THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS\n"
+	"``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED\n"
+	"TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR\n"
+	"PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS\n"
+	"BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR\n"
+	"CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF\n"
+	"SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS\n"
+	"INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN\n"
+	"CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)\n"
+	"ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE\n"
+	"POSSIBILITY OF SUCH DAMAGE.\n"
+	"\n"
+	"\n"	
+	"Win32 port by Kronuz\n"
+	"This product includes software developed by Kronuz.\n"
+	"\n"
+	"[ ntservice ]\n"
+	"\n"
+	"Copyright (c) 2006 Germán Méndez Bravo (Kronuz) <kronuz@users.sf.net>\n"
+	"All rights reserved.\n"
+	"\n"
+	"Redistribution and use in source and binary forms, with or without\n"
+	"modification, are permitted provided that the following conditions\n"
+	"are met:\n"
+	"1. Redistributions of source code must retain the above copyright\n"
+	"   notice, this list of conditions and the following disclaimer.\n"
+	"2. Redistributions in binary form must reproduce the above copyright\n"
+	"   notice, this list of conditions and the following disclaimer in the\n"
+	"   documentation and/or other materials provided with the distribution.\n"
+	"3. All advertising materials mentioning features or use of this software\n"
+	"   must display the following acknowledgement:\n"
+	"      This product includes software developed by Kronuz.\n"
+	"4. The name of the author may not be used to endorse or promote products\n"
+	"   derived from this software without specific prior written permission.\n"
+	"\n"
+	"THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR\n"
+	"IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES\n"
+	"OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.\n"
+	"IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,\n"
+	"INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT\n"
+	"NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
+	"DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
+	"THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
+	"(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF\n"
+	"THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+#endif
     );
 
     return;
@@ -1516,6 +1626,27 @@ void remove_pidfile(char *pid_file) {
 
 }
 
+void runServer()
+{
+    /* enter the loop */
+    event_loop(0);
+}
+
+void stopServer()
+{
+    /* exit the loop */
+    event_loopexit(NULL);
+}
+void pauseServer()
+{
+    /* not implemented yet */
+}
+
+void continueServer()
+{
+    /* not implemented yet */
+}
+
 int l_socket=0;
 
 int main (int argc, char **argv) {
@@ -1526,10 +1657,19 @@ int main (int argc, char **argv) {
     int daemonize = 0;
     int maxcore = 0;
     char *username = 0;
+    char *pid_file = NULL;
+
+#ifndef WIN32
     struct passwd *pw;
     struct sigaction sa;
     struct rlimit rlim;
-    char *pid_file = NULL;
+#else
+    WSADATA wsaData;
+    if(WSAStartup(MAKEWORD(2,0), &wsaData) != 0) {
+        fprintf(stderr, "Socket Initialization Error. Program  aborted\n");
+        return;
+    }
+#endif
 
     /* init settings */
     settings_init();
@@ -1538,7 +1678,11 @@ int main (int argc, char **argv) {
     setbuf(stderr, NULL);
 
     /* process arguments */
+#ifndef WIN32
     while ((c = getopt(argc, argv, "bp:m:Mc:khirvdl:u:P:")) != -1) {
+#else
+    while ((c = getopt(argc, argv, "bp:m:Mc:khirvd:l:u:P:")) != -1) {
+#endif
         switch (c) {
         case 'b':
             settings.managed = 1;
@@ -1572,11 +1716,21 @@ int main (int argc, char **argv) {
                 fprintf(stderr, "Illegal address: %s\n", optarg);
                 return 1;
             } else {
-                settings.interface = addr;
+                settings.interf = addr;
             }
             break;
         case 'd':
             daemonize = 1;
+#ifdef WIN32
+            if(!optarg || !strcmpi(optarg, "runservice")) daemonize = 1;
+            else if(!strcmpi(optarg, "start")) daemonize = 2;
+            else if(!strcmpi(optarg, "restart")) daemonize = 3;
+            else if(!strcmpi(optarg, "stop")) daemonize = 4;
+            else if(!strcmpi(optarg, "shutdown")) daemonize = 5;
+            else if(!strcmpi(optarg, "install")) daemonize = 6;
+            else if(!strcmpi(optarg, "uninstall")) daemonize = 7;
+            else fprintf(stderr, "Illegal argument: \"%s\"\n", optarg);
+#endif
             break;
         case 'r':
             maxcore = 1;
@@ -1593,6 +1747,7 @@ int main (int argc, char **argv) {
         }
     }
 
+#ifndef WIN32
     if (maxcore) {
         struct rlimit rlim_new;
         /* 
@@ -1639,6 +1794,7 @@ int main (int argc, char **argv) {
             exit(1);
         }
     }
+#endif
 
     /* 
      * initialization order: first create the listening socket
@@ -1654,6 +1810,7 @@ int main (int argc, char **argv) {
         exit(1);
     }
 
+#ifndef WIN32
     /* lose root privileges if we have them */
     if (getuid()== 0 || geteuid()==0) {
         if (username==0 || *username=='\0') {
@@ -1669,7 +1826,9 @@ int main (int argc, char **argv) {
             return 1;
         }
     }
+#endif
 
+#ifndef WIN32
     /* daemonize if requested */
     /* if we want to ensure our ability to dump core, don't chdir to / */
     if (daemonize) {
@@ -1680,7 +1839,41 @@ int main (int argc, char **argv) {
             return 1;
         }
     }
-
+#else
+    switch(daemonize) {
+        case 2:
+            if(!ServiceStart()) {
+                fprintf(stderr, "failed to start service\n");
+                return 1;
+            }
+            exit(0);
+        case 3:
+            if(!ServiceRestart()) {
+                fprintf(stderr, "failed to restart service\n");
+                return 1;
+            }
+            exit(0);
+        case 4:
+        case 5:
+            if(!ServiceStop()) {
+                fprintf(stderr, "failed to stop service\n");
+                return 1;
+            }
+            exit(0);
+        case 6:
+            if(!ServiceInstall()) {
+                fprintf(stderr, "failed to install service or service already installed\n");
+                return 1;
+            }
+            exit(0);
+        case 7:
+            if(!ServiceUninstall()) {
+                fprintf(stderr, "failed to uninstall service or service not installed\n");
+                return 1;
+            }
+            exit(0);
+    }
+#endif
 
     /* initialize other stuff */
     item_init();
@@ -1709,6 +1902,7 @@ int main (int argc, char **argv) {
 #endif
     }
 
+#ifndef WIN32
     /*
      * ignore SIGPIPE signals; we can use errno==EPIPE if we
      * need that information
@@ -1720,6 +1914,7 @@ int main (int argc, char **argv) {
         perror("failed to ignore SIGPIPE; sigaction");
         exit(1); 
     }
+#endif
 
     /* create the initial listening connection */
     if (!(l_conn = conn_new(l_socket, conn_listening, EV_READ | EV_PERSIST))) {
@@ -1736,12 +1931,20 @@ int main (int argc, char **argv) {
     if (daemonize)
         save_pid(getpid(),pid_file);
 
-    /* enter the loop */
-    event_loop(0);
+#ifdef WIN32
+    if (daemonize)
+        ServiceRun();
+    else
+#endif
+        runServer();
 
     /* remove the PID file if we're a daemon */
     if (daemonize)
         remove_pidfile(pid_file);
+
+#ifdef WIN32
+    WSACleanup();
+#endif
 
     return 0;
 }

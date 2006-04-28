@@ -7,10 +7,14 @@
 #define TCP_NOPUSH TCP_CORK
 #endif
 
+#ifdef WIN32
+#include "Win32-Code/win32.h"
+#endif
+
 struct stats {
     unsigned int  curr_items;
     unsigned int  total_items;
-    unsigned long long  curr_bytes;
+    uint64_t      curr_bytes;
     unsigned int  curr_conns;
     unsigned int  total_conns;
     unsigned int  conn_structs;
@@ -19,15 +23,15 @@ struct stats {
     unsigned int  get_hits;
     unsigned int  get_misses;
     time_t        started;          /* when the process was started */
-    unsigned long long bytes_read;
-    unsigned long long bytes_written;
+    uint64_t      bytes_read;
+    uint64_t      bytes_written;
 };
 
 struct settings {
     unsigned int maxbytes;
     int maxconns;
     int port;
-    struct in_addr interface;
+    struct in_addr interf;
     int verbose;
     int managed;          /* if 1, a tracker manages virtual buckets */
     time_t oldest_live;   /* ignore existing items older than this */

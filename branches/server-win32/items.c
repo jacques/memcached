@@ -3,17 +3,21 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifndef WIN32
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/signal.h>
 #include <sys/resource.h>
+#include <unistd.h>
+#include <netinet/in.h>
 #include <fcntl.h>
+#include <errno.h>
+#else
+#include <Winsock2.h>
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
-#include <netinet/in.h>
-#include <errno.h>
 #include <time.h>
 #include <event.h>
 #include <assert.h>
