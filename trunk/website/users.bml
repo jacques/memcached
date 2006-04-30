@@ -210,6 +210,47 @@ http://spamarrest.com
 
 -----
 
+Date: Sun, 28 Nov 2004 20:19:36 -0700
+From: Sean Reifschneider <jafo@tummy.com>
+To: brad@danga.com
+Subject: JOTWeb2 now supports memcached.
+
+I just wanted to let you know that the JOTWeb2 python-based web application
+development system now includes support for simple page caching using
+memcached.  More information is available at http://jotweb.tummy.com/
+
+The current support uses a fairly naive scheme: during page rendering a
+"expiration seconds" value can be set to something other than the default
+"0".  Cache lookup decisions are based entirely on the URI passed and the
+expiration time.  Of course this means that you cannot use it for HTML form
+submissions, but JOTWeb2's virtual URIs make this a non-issue for most
+issues where you'd want caching of forms(.../blogs/index.html?start=5&count=20).
+
+A more sophistocated caching mechanism is is in the late design stages, but
+probably won't be implemented for a while because the current caching
+mechanism works extremely well, when combined with a few site design
+restrictions.
+
+I've just turned it on for the most expensive pages on our site
+(http://www.tummy.com/journals/), which are generated from a database, and
+it's dropped the page render time from 250 to 500ms down to 15 to 20ms.
+
+memcached is extremely cool.  I had been toying with the idea of adding
+some sort of caching to JOTWeb for probably a year, and had put it off
+because of all the details it involved.  I ran across a slashdot article
+about memcached a while back and realized that memcached could be used to
+do much of the heavy lifting, eliminating many of the details required for
+the caching.  I was able to implement a simple but effective page caching
+mechanism in JOTWeb2 in literally 45 minutes one night before giving a
+presentation on JOTWeb2 to a local users group.
+
+Feel free to put any of this that you are interested in up on the memcached
+Users page.
+
+Thanks,
+Sean
+
+-----
 
 
 
