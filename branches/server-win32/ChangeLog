@@ -1,3 +1,7 @@
+2006-04-30
+	* River Tarnell:  autoconf work for Solaris 10.  Brad:
+	merge and verify it works on Nexenta.
+
 2006-03-04
 	* avva: bucket/generation patch (old, but Brad's just finally
 	committing it)
