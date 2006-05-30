@@ -34,6 +34,7 @@ struct settings {
     struct in_addr interface;
     int verbose;
     rel_time_t oldest_live; /* ignore existing items older than this */
+    int managed;          /* if 1, a tracker manages virtual buckets */
     int evict_to_free;
     double factor;          /* chunk size growth factor */
     int chunk_size;
@@ -92,11 +93,12 @@ typedef struct {
     int    state;
     struct event event;
     short  ev_flags;
-    short  which;  /* which events were just triggered */
+    short  which;   /* which events were just triggered */
 
-    char   *rbuf;  
-    int    rsize;  
-    int    rbytes;
+    char   *rbuf;   /* buffer to read commands into */
+    char   *rcurr;  /* but if we parsed some already, this is where we stopped */
+    int    rsize;   /* total allocated size of rbuf */
+    int    rbytes;  /* how much data, starting from rcur, do we have unparsed */
 
     char   *wbuf;
     char   *wcurr;
@@ -105,7 +107,7 @@ typedef struct {
     int    write_and_go; /* which state to go into after finishing current write */
     void   *write_and_free; /* free this memory after finishing writing */
 
-    char   *rcurr;
+    char   *ritem;  /* when we read in an item's value, it goes here */
     int    rlbytes;
     
     /* data for the nread state */
@@ -145,7 +147,15 @@ typedef struct {
     socklen_t request_addr_size;
     unsigned char *hdrbuf; /* udp packet headers */
     int    hdrsize;   /* number of headers' worth of space is allocated */
+
+    int    binary;    /* are we in binary mode */
+    int    bucket;    /* bucket number for the next command, if running as
+                         a managed instance. -1 (_not_ 0) means invalid. */
+    int    gen;       /* generation requested for the bucket */
 } conn;
+
+/* number of virtual buckets for a managed instance */
+#define MAX_BUCKETS 32768
 
 /* listening socket */
 extern int l_socket;
@@ -178,6 +188,14 @@ rel_time_t realtime(time_t exptime);
    0 if no limit. 2nd argument is the growth factor; each slab will use a chunk
    size equal to the previous slab's chunk size times this factor. */
 void slabs_init(size_t limit, double factor);
+
+/* Preallocate as many slab pages as possible (called from slabs_init)
+   on start-up, so users don't get confused out-of-memory errors when
+   they do have free (in-slab) space, but no space to make new slabs.
+   if maxslabs is 18 (POWER_LARGEST - POWER_SMALLEST + 1), then all
+   slab types can be made.  if max memory is less than 18 MB, only the
+   smaller ones will be made.  */
+void slabs_preallocate (unsigned int maxslabs);
 
 /* Given object size, return id to use when allocating/freeing memory for object */
 /* 0 means error: can't store such a large object */
