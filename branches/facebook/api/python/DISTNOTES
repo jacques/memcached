@@ -1,3 +1,0 @@
-Note for Brad, on how to make new releases:
-
-$ python setup.py sdist
