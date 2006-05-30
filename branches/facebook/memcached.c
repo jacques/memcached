@@ -1033,9 +1033,6 @@ void process_command(conn *c, char *command) {
                 c->gen = gen;
             }
             c->state = conn_read;
-            /* normally conn_write uncorks the connection, but this
-               is the only time we accept a command w/o writing anything */
-            set_cork(c,0); 
             return;
         } else {
             out_string(c, "CLIENT_ERROR bad format");
