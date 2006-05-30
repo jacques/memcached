@@ -21,12 +21,7 @@
 #include "memcached.h"
 
 
-/* 
- * NOTE: we assume here for simplicity that slab ids are <=32. That's true in 
- * the powers-of-2 implementation, but if that changes this should be changed too
- */
-
-#define LARGEST_ID 32
+#define LARGEST_ID 255
 static item *heads[LARGEST_ID];
 static item *tails[LARGEST_ID];
 unsigned int sizes[LARGEST_ID];
@@ -41,14 +36,16 @@ void item_init(void) {
 }
 
 
-item *item_alloc(char *key, int flags, time_t exptime, int nbytes) {
-    int ntotal, len;
+item *item_alloc(char *key, int flags, rel_time_t exptime, int nbytes) {
+    int nsuffix, ntotal, len;
     item *it;
     unsigned int id;
+    char suffix[40];
 
     len = strlen(key) + 1; if(len % 4) len += 4 - (len % 4);
-    ntotal = sizeof(item) + len + nbytes;
-    
+    nsuffix = sprintf(suffix, " %u %u\r\n", flags, nbytes - 2);
+    ntotal = sizeof(item) + len + nsuffix + nbytes;
+ 
     id = slabs_clsid(ntotal);
     if (id == 0)
         return 0;
@@ -97,7 +94,8 @@ item *item_alloc(char *key, int flags, time_t exptime, int nbytes) {
     it->nbytes = nbytes;
     strcpy(ITEM_key(it), key);
     it->exptime = exptime;
-    it->flags = flags;
+    memcpy(ITEM_suffix(it), suffix, nsuffix);
+    it->nsuffix = nsuffix;
     return it;
 }
 
@@ -159,7 +157,7 @@ int item_link(item *it) {
     assert((it->it_flags & (ITEM_LINKED|ITEM_SLABBED)) == 0);
     assert(it->nbytes < 1048576);
     it->it_flags |= ITEM_LINKED;
-    it->time = time(0);
+    it->time = current_time;
     assoc_insert(ITEM_key(it), it);
 
     stats.curr_bytes += ITEM_ntotal(it);
@@ -195,7 +193,7 @@ void item_update(item *it) {
     assert((it->it_flags & ITEM_SLABBED) == 0);
 
     item_unlink_q(it);
-    it->time = time(0);
+    it->time = current_time;
     item_link_q(it);
 }
 
@@ -224,7 +222,7 @@ char *item_cachedump(unsigned int slabs_clsid, unsigned int limit, unsigned int 
     bufcurr = 0;
 
     while (it && (!limit || shown < limit)) {
-        len = sprintf(temp, "ITEM %s [%u b; %lu s]\r\n", ITEM_key(it), it->nbytes - 2, it->time);
+        len = sprintf(temp, "ITEM %s [%u b; %lu s]\r\n", ITEM_key(it), it->nbytes - 2, it->time + stats.started);
         if (bufcurr + len + 6 > memlimit)  /* 6 is END\r\n\0 */
             break;
         strcpy(buffer + bufcurr, temp);
@@ -243,7 +241,7 @@ char *item_cachedump(unsigned int slabs_clsid, unsigned int limit, unsigned int 
 void item_stats(char *buffer, int buflen) {
     int i;
     char *bufcurr = buffer;
-    time_t now = time(0);
+    rel_time_t now = current_time;
 
     if (buflen < 4096) {
         strcpy(buffer, "SERVER_ERROR out of memory");
@@ -252,7 +250,7 @@ void item_stats(char *buffer, int buflen) {
 
     for (i=0; i<LARGEST_ID; i++) {
         if (tails[i])
-            bufcurr += sprintf(bufcurr, "STAT items:%u:number %u\r\nSTAT items:%u:age %lu\r\n", 
+            bufcurr += sprintf(bufcurr, "STAT items:%u:number %u\r\nSTAT items:%u:age %u\r\n", 
                                i, sizes[i], i, now - tails[i]->time);
     }
     strcpy(bufcurr, "END");
@@ -262,7 +260,7 @@ void item_stats(char *buffer, int buflen) {
 /* dumps out a list of objects of each size, with granularity of 32 bytes */
 char* item_stats_sizes(int *bytes) {
     int num_buckets = 32768;   /* max 1MB object, divided into 32 bytes size buckets */
-    unsigned int *histogram = (int*) malloc(num_buckets * sizeof(int));
+    unsigned int *histogram = (unsigned int*) malloc(num_buckets * sizeof(int));
     char *buf = (char*) malloc(1024*1024*2*sizeof(char));
     int i;
 
