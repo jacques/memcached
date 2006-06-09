@@ -28,8 +28,6 @@ typedef unsigned int        uint32_t;
 #undef errno
 #define errno WSAGetLastError()
 #define close(s) closesocket(s)
-#define write(s, buf, len) send(s, buf, len, 0)
-#define read(s, buf, len) recv(s, buf, len, 0)
 #define EWOULDBLOCK WSAEWOULDBLOCK
 #define EAGAIN EWOULDBLOCK 
 typedef int socklen_t;
@@ -40,5 +38,16 @@ typedef int socklen_t;
 
 int fcntl(SOCKET s, int cmd, int val);
 int inet_aton(register const char *cp, struct in_addr *addr);
+
+__inline size_t write(int s, void *buf, size_t len) {
+	size_t ret = send(s, buf, len, 0);
+	if(ret == -1 && WSAGetLastError() == WSAECONNRESET) return 0;
+	return ret;
+}
+__inline size_t read(int s, void *buf, size_t len) {
+	size_t ret = recv(s, buf, len, 0);
+	if(ret == -1 && WSAGetLastError() == WSAECONNRESET) return 0;
+	return ret;
+}
 
 #endif
