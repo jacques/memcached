@@ -174,9 +174,9 @@ conn *conn_new(int sfd, int init_state, int event_flags, int read_buffer_size,
 
         c->rsize = read_buffer_size;
         c->wsize = DATA_BUFFER_SIZE;
-        c->isize = 200;
-        c->iovsize = 200;
-        c->msgsize = 10;
+        c->isize = 200;    /* TODO: make these two things #define'd if not runtime */
+        c->iovsize = 200;  /* TODO: can this be different on init, or must it be c->isize?  two magic values is code is bad */
+        c->msgsize = 10;  /* TODO: likewise, what is this magic constant? */
         c->hdrsize = 0;
 
         c->rbuf = (char *) malloc(c->rsize);
@@ -199,7 +199,7 @@ conn *conn_new(int sfd, int init_state, int event_flags, int read_buffer_size,
 
         c->rsize = c->wsize = DATA_BUFFER_SIZE;
         c->rcurr = c->rbuf;
-        c->isize = 200;
+        c->isize = 200;   /* TODO: another instance of '200'.  must kill all these */
 
         stats.conn_structs++;
     }
@@ -220,7 +220,7 @@ conn *conn_new(int sfd, int init_state, int event_flags, int read_buffer_size,
     c->rbytes = c->wbytes = 0;
     c->wcurr = c->wbuf;
     c->ritem = 0;
-    c->icurr = c->ilist; 
+    c->icurr = c->ilist;
     c->ileft = 0;
     c->iovused = 0;
     c->msgcurr = 0;
@@ -346,6 +346,8 @@ int ensure_iov_space(conn *c) {
  *
  * Returns 0 on success, -1 on out-of-memory.
  */
+
+/* TODO: can this *buf be const? */
 int add_iov(conn *c, void *buf, int len) {
     struct msghdr *m;
     int i;
@@ -877,7 +879,7 @@ void process_command(conn *c, char *command) {
                         c->ilist = new_list;
                     } else break;
                 }
-                
+
                 /*
                  * Construct the response. Each hit adds three elements to the
                  * outgoing data list:
@@ -885,6 +887,7 @@ void process_command(conn *c, char *command) {
                  *   key
                  *   " " + flags + " " + data length + "\r\n" + data (with \r\n)
                  */
+                /* TODO: can we avoid the strlen() func call and cache that in wasted byte in item struct? */
                 if (add_iov(c, "VALUE ", 6) ||
                     add_iov(c, ITEM_key(it), strlen(ITEM_key(it))) ||
                     add_iov(c, ITEM_suffix(it), it->nsuffix + it->nbytes))
@@ -1299,7 +1302,6 @@ void drive_machine(conn *c) {
     int res;
 
     while (!exit) {
-        /* printf("state %d\n", c->state);*/
         switch(c->state) {
         case conn_listening:
             addrlen = sizeof(addr);
@@ -1317,7 +1319,7 @@ void drive_machine(conn *c) {
                 perror("setting O_NONBLOCK");
                 close(sfd);
                 break;
-            }            
+            }
             newc = conn_new(sfd, conn_read, EV_READ | EV_PERSIST,
                             DATA_BUFFER_SIZE, 0);
             if (!newc) {
