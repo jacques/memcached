@@ -198,7 +198,6 @@ conn *conn_new(int sfd, int init_state, int event_flags, int read_buffer_size,
         }
 
         c->rsize = c->wsize = DATA_BUFFER_SIZE;
-        c->rcurr = c->rbuf;
         c->isize = 200;   /* TODO: another instance of '200'.  must kill all these */
 
         stats.conn_structs++;
@@ -219,6 +218,7 @@ conn *conn_new(int sfd, int init_state, int event_flags, int read_buffer_size,
     c->rlbytes = 0;
     c->rbytes = c->wbytes = 0;
     c->wcurr = c->wbuf;
+    c->rcurr = c->rbuf;
     c->ritem = 0;
     c->icurr = c->ilist;
     c->ileft = 0;
