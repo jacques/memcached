@@ -1,0 +1,30 @@
+page<=
+{Fps}<html>
+<head>
+   <title>memcached: %%wintitle%%</title>
+   <link rel='stylesheet' type='text/css' href='memcached.css' />
+</head>
+<body>
+
+<h1>memcached</h1>
+<div class='linkbar'>
+<?link ./|About link?>
+<?link news.bml|News link?>
+<?link download.bml|Download link?>
+<?link apis.bml|Client APIs link?>
+<?link users.bml|Users link?>
+<?link http://lists.danga.com/mailman/listinfo/memcached|Mailing List link?>
+</div>
+
+%%body%%
+
+<div class='footer'>Brad Fitzpatrick &lt;brad@danga.com&gt;</div>
+</body>
+</html>
+<=page
+
+h1=>{D}<h2>%%data%%</h2>
+
+memd=>{S}<tt class='mem'>memcached</tt>
+
+link=>{RP}[<a href="%%data1%%" class='barlink'>%%data2%%</a>] 

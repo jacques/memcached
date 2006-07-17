@@ -1,0 +1,67 @@
+<?page
+wintitle=>client apis
+body<=
+
+<?h1 Perl API h1?>
+
+<p> An object-oriented Perl module can be found on CPAN as <tt>Cache::Memcached</tt> or downloaded here.</p>
+<ul>
+<li><a href="dist/Cache-Memcached-1.14.tar.gz">Cache-Memcached-1.14.tar.gz</a>, GPL/Artistic.
+[<a href="http://cvs.danga.com/browse.cgi/wcmtools/memcached/api/perl/ChangeLog?rev=HEAD&amp;content-type=text/plain">ChangeLog</a>]
+</ul>
+
+<p>The API takes advantage of the server's opaque flag support and
+sets its "complex" flag whenever the object being stored or retrieved
+isn't a plain scalar.  In that case, the <tt>Storable</tt> module is
+used to freeze and thaw the value automatically going in and out of
+the memcached.</p>
+
+<?h1 PHP API h1?>
+
+<p>There are tons of PHP libraries available, in different conditions.  The community hasn't yet decided which is the best.  When they do, let me know.  For now I'll let you search Google rather than link any.</p>
+
+<?h1 Python API h1?>
+
+<p>The Python client we'd previously released was just a prototype, and we don't have regular Python programmers on hand.  The folks at Tummy.com have took over maintenance.  See <a href="ftp://ftp.tummy.com/pub/python-memcached/">ftp://ftp.tummy.com/pub/python-memcached/</a> for the latest versions.</p>
+
+<?h1 Ruby API h1?>
+<p>A Ruby API is available from Michael Granger at:</p>
+
+<ul>
+<li><a href="http://www.deveiate.org/code/Ruby-MemCache.html">http://www.deveiate.org/code/Ruby-MemCache.html</a></li>
+</ul>
+
+
+<?h1 Java API h1?>
+<p>A Java API is maintained by <a href="mailto:greg@meetup.com">Greg Whalin</a> from <a href="http://www.meetup.com/">Meetup.com</a>.  You can find that library here:
+
+<ul>
+<li><a href="http://www.whalin.com/memcached/">http://www.whalin.com/memcached/</a> -- Java API for memcached
+</ul>
+
+<?h1 C# API h1?>
+<p>A C# API is available at:
+
+<ul>
+<li><a href="https://sourceforge.net/projects/memcacheddotnet/">https://sourceforge.net/projects/memcacheddotnet/</a>
+</ul>
+
+<?h1 C API h1?>
+<p>Multiple C libraries for memcached exist:</p>
+<ul>
+<li><a href="http://www.outoforder.cc/projects/libs/apr_memcache/">apr_memcache</a> by Paul Querna; Apache Software License version 2.0</li>
+
+<li><a href="http://people.freebsd.org/~seanc/libmemcache/">libmemcache</a> by Sean Chittenden; BSD license.</li>
+</ul>
+
+
+<?h1 Protocol h1?> <p>To write a new client, check out the <a
+href="http://cvs.danga.com/browse.cgi/wcmtools/memcached/doc/protocol.txt?rev=HEAD&amp;content-type=text/plain">protocol
+docs</a>.  Be aware that the most important part of the client is the
+hashing across multiple servers, based on the key, or an optional
+caller-provided hashing value.  Feel free to join the mailing list (or
+mail me directly) for help, inclusion in CVS, and/or a link to your
+client from this site.</p>
+
+<=body
+page?>
