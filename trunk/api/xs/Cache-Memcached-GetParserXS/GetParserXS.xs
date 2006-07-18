@@ -111,7 +111,7 @@ int parse_buffer (SV* selfref) {
       printf("rv=%d, scanned=%d, one=[%d], two=[%d]\n",
              rv, scanned, buf[scanned], buf[scanned+1]);
 
-    if (rv >= 3 && scanned && buf[scanned] == '\r' && buf[scanned + 1] == '\n') {
+    if (rv >= 3 && scanned && buf[scanned+1] == '\n') {
       int p     = scanned + 2;      /* 2 to skip \r\n */
       int state = itemlen + 2;      /* 2 to include reading final \r\n, a different \r\n */
       int copy  = len - p > state ? state : len - p;
