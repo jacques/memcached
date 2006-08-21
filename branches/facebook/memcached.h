@@ -36,6 +36,7 @@ struct settings {
     rel_time_t oldest_live; /* ignore existing items older than this */
     int managed;          /* if 1, a tracker manages virtual buckets */
     int evict_to_free;
+    char *socketpath;   /* path to unix socket if using local socket */
     double factor;          /* chunk size growth factor */
     int chunk_size;
 };

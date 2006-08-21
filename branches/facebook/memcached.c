@@ -21,6 +21,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <sys/signal.h>
 #include <sys/resource.h>
 /* some POSIX systems need the following definition
@@ -102,6 +103,7 @@ void settings_init(void) {
     settings.verbose = 0;
     settings.oldest_live = 0;
     settings.evict_to_free = 1;       /* push old items out of cache when memory runs out */
+    settings.socketpath = NULL;       /* by default, not using a unix socket */
     settings.managed = 0;
     settings.factor = 1.25;
     settings.chunk_size = 48;         /* space for a modest key and value */
@@ -1619,6 +1621,64 @@ int server_socket(int port, int is_udp) {
     return sfd;
 }
 
+int new_socket_unix(void) {
+    int sfd;
+    int flags;
+
+    if ((sfd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
+        perror("socket()");
+        return -1;
+    }
+
+    if ((flags = fcntl(sfd, F_GETFL, 0)) < 0 ||
+        fcntl(sfd, F_SETFL, flags | O_NONBLOCK) < 0) {
+        perror("setting O_NONBLOCK");
+        close(sfd);
+        return -1;
+    }
+    return sfd;
+}
+
+int server_socket_unix(char *path) {
+    int sfd;
+    struct linger ling = {0, 0};
+    struct sockaddr_un addr;
+    int flags =1;
+
+    if (!path) {
+        return -1;
+    }
+
+    if ((sfd = new_socket_unix()) == -1) {
+        return -1;
+    }
+
+    setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &flags, sizeof(flags));
+    setsockopt(sfd, SOL_SOCKET, SO_KEEPALIVE, &flags, sizeof(flags));
+    setsockopt(sfd, SOL_SOCKET, SO_LINGER, &ling, sizeof(ling));
+
+    /*
+     * the memset call clears nonstandard fields in some impementations
+     * that otherwise mess things up.
+     */
+    memset(&addr, 0, sizeof(addr));
+
+    addr.sun_family = AF_UNIX;
+    strcpy(addr.sun_path, path);
+    if (bind(sfd, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
+        perror("bind()");
+        close(sfd);
+        return -1;
+    }
+    if (listen(sfd, 1024) == -1) {
+        perror("listen()");
+        close(sfd);
+        return -1;
+    }
+    return sfd;
+}
+
+
 /* invoke right before gdb is called, on assert */
 void pre_gdb () {
     int i = 0;
@@ -1697,6 +1757,7 @@ void delete_handler(int fd, short which, void *arg) {
 void usage(void) {
     printf(PACKAGE " " VERSION "\n");
     printf("-p <num>      port number to listen on\n");
+    printf("-s <file>     unix socket path to listen on (disables network support)\n");
     printf("-l <ip_addr>  interface to listen on, default is INDRR_ANY\n");
     printf("-d            run as a daemon\n");
     printf("-r            maximize core file limit\n");
@@ -1712,7 +1773,7 @@ void usage(void) {
     printf("-b            run a managed instanced (mnemonic: buckets)\n");
     printf("-P <file>     save PID in <file>, only used with -d option\n");
     printf("-f <factor>   chunk size growth factor, default 1.25\n");
-    printf("-s <bytes>    minimum space allocated for key+value+flags, default 48\n");
+    printf("-n <bytes>    minimum space allocated for key+value+flags, default 48\n");
     return;
 }
 
@@ -1846,7 +1907,7 @@ int main (int argc, char **argv) {
     setbuf(stderr, NULL);
 
     /* process arguments */
-    while ((c = getopt(argc, argv, "bp:U:m:Mc:khirvdl:u:P:f:s:")) != -1) {
+    while ((c = getopt(argc, argv, "bp:s:U:m:Mc:khirvdl:u:P:f:s:")) != -1) {
         switch (c) {
         case 'U':
             settings.udpport = atoi(optarg);
@@ -1856,6 +1917,9 @@ int main (int argc, char **argv) {
             break;
         case 'p':
             settings.port = atoi(optarg);
+            break;
+        case 's':
+            settings.socketpath = optarg;
             break;
         case 'm':
             settings.maxbytes = ((size_t)atoi(optarg))*1024*1024;
@@ -1905,7 +1969,7 @@ int main (int argc, char **argv) {
                 return 1;
             }
             break;
-        case 's':
+        case 'n':
             settings.chunk_size = atoi(optarg);
             if (settings.chunk_size == 0) {
                 fprintf(stderr, "Chunk size must be greater than 0\n");
@@ -1973,7 +2037,12 @@ int main (int argc, char **argv) {
      */
 
     /* create the listening socket and bind it */
-    l_socket = server_socket(settings.port, 0);
+    if (settings.socketpath) {
+        l_socket = server_socket_unix(settings.socketpath);
+    } else {
+        l_socket = server_socket(settings.port, 0);
+    }
+
     if (l_socket == -1) {
         fprintf(stderr, "failed to listen\n");
         exit(1);
