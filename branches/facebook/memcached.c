@@ -1652,6 +1652,7 @@ int server_socket_unix(char *path) {
     int sfd;
     struct linger ling = {0, 0};
     struct sockaddr_un addr;
+    struct stat tstat;
     int flags =1;
 
     if (!path) {
@@ -1660,6 +1661,14 @@ int server_socket_unix(char *path) {
 
     if ((sfd = new_socket_unix()) == -1) {
         return -1;
+    }
+
+    /* 
+     * Clean up a previous socket file if we left it around
+     */
+    if ( !lstat(path, &tstat) ) {
+        if ( S_ISSOCK(tstat.st_mode) )
+            unlink(path);
     }
 
     setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &flags, sizeof(flags));
@@ -2046,15 +2055,12 @@ int main (int argc, char **argv) {
      */
 
     /* create the listening socket and bind it */
-    if (settings.socketpath) {
-        l_socket = server_socket_unix(settings.socketpath);
-    } else {
+    if (!settings.socketpath) {
         l_socket = server_socket(settings.port, 0);
-    }
-
-    if (l_socket == -1) {
-        fprintf(stderr, "failed to listen\n");
-        exit(1);
+        if (l_socket == -1) {
+            fprintf(stderr, "failed to listen\n");
+            exit(1);
+        }
     }
 
     if (settings.udpport > 0 && ! settings.socketpath) {
@@ -2079,6 +2085,15 @@ int main (int argc, char **argv) {
         if (setgid(pw->pw_gid)<0 || setuid(pw->pw_uid)<0) {
             fprintf(stderr, "failed to assume identity of user %s\n", username);
             return 1;
+        }
+    }
+
+    /* create unix mode sockets after dropping privileges */
+    if (settings.socketpath) {
+        l_socket = server_socket_unix(settings.socketpath);
+        if (l_socket == -1) {
+            fprintf(stderr, "failed to listen\n");
+            exit(1);
         }
     }
 
