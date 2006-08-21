@@ -1,0 +1,5 @@
+# set / delete / set / get  all in a row -- subsecond resolution needed?
+  -- same with flush_all followed by get?
+
+
+
