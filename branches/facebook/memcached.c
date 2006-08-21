@@ -87,7 +87,7 @@ void stats_init(void) {
     stats.get_cmds = stats.set_cmds = stats.get_hits = stats.get_misses = 0;
     stats.curr_bytes = stats.bytes_read = stats.bytes_written = 0;
     stats.started = time(0);
-} 
+}
 void stats_reset(void) {
     stats.total_items = stats.total_conns = 0;
     stats.get_cmds = stats.set_cmds = stats.get_hits = stats.get_misses = 0;
@@ -117,7 +117,7 @@ void settings_init(void) {
 int add_msghdr(conn *c)
 {
     struct msghdr *msg;
-    
+
     if (c->msgsize == c->msgused) {
         msg = realloc(c->msglist, c->msgsize * 2 * sizeof(struct msghdr));
         if (! msg)
@@ -1200,7 +1200,16 @@ int try_read_network(conn *c) {
             c->rcurr  = c->rbuf = new_rbuf;
             c->rsize *= 2;
         }
-        c->request_addr_size = sizeof(c->request_addr);
+
+        /* unix socket mode doesn't need this, so zeroed out.  but why
+         * is this done for every command?  presumably for UDP
+         * mode.  */
+        if (c->request_addr.sa_family != AF_UNSPEC) {
+            c->request_addr_size = sizeof(c->request_addr);
+        } else {
+            c->request_addr_size = 0;
+        }
+
         res = read(c->sfd, c->rbuf + c->rbytes, c->rsize - c->rbytes);
         if (res > 0) {
             stats.bytes_read += res;
@@ -1599,7 +1608,7 @@ int server_socket(int port, int is_udp) {
         setsockopt(sfd, IPPROTO_TCP, TCP_NODELAY, &flags, sizeof(flags));
     }
 
-    /* 
+    /*
      * the memset call clears nonstandard fields in some impementations
      * that otherwise mess things up.
      */
@@ -2048,7 +2057,7 @@ int main (int argc, char **argv) {
         exit(1);
     }
 
-    if (settings.udpport > 0) {
+    if (settings.udpport > 0 && ! settings.socketpath) {
         /* create the UDP listening socket and bind it */
         u_socket = server_socket(settings.udpport, 1);
         if (u_socket == -1) {
@@ -2056,7 +2065,6 @@ int main (int argc, char **argv) {
             exit(1);
         }
     }
-
 
     /* lose root privileges if we have them */
     if (getuid()== 0 || geteuid()==0) {
