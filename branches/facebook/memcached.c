@@ -1666,8 +1666,8 @@ int server_socket_unix(char *path) {
     /* 
      * Clean up a previous socket file if we left it around
      */
-    if ( !lstat(path, &tstat) ) {
-        if ( S_ISSOCK(tstat.st_mode) )
+    if (!lstat(path, &tstat)) {
+        if (S_ISSOCK(tstat.st_mode))
             unlink(path);
     }
 
