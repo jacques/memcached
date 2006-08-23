@@ -36,15 +36,30 @@ void item_init(void) {
 }
 
 
+/*
+ * Generates the variable-sized part of the header for an object.
+ *
+ * suffix  - Buffer for the "VALUE" line suffix (flags, size).
+ * nsuffix - The length of the suffix is stored here.
+ * keylen  - The length of the key plus any padding required to word-align the
+ *           "VALUE" suffix (which is done to speed up copying.)
+ *
+ * Returns the total size of the header.
+ */
+int item_make_header(char *key, int flags, int nbytes,
+                     char *suffix, int *nsuffix, int *keylen) {
+    *keylen = strlen(key) + 1; if(*keylen % 4) *keylen += 4 - (*keylen % 4);
+    *nsuffix = sprintf(suffix, " %u %u\r\n", flags, nbytes - 2);
+    return sizeof(item) + *keylen + *nsuffix + nbytes;
+}
+ 
 item *item_alloc(char *key, int flags, rel_time_t exptime, int nbytes) {
     int nsuffix, ntotal, len;
     item *it;
     unsigned int id;
     char suffix[40];
 
-    len = strlen(key) + 1; if(len % 4) len += 4 - (len % 4);
-    nsuffix = sprintf(suffix, " %u %u\r\n", flags, nbytes - 2);
-    ntotal = sizeof(item) + len + nsuffix + nbytes;
+    ntotal = item_make_header(key, flags, nbytes, suffix, &nsuffix, &len);
  
     id = slabs_clsid(ntotal);
     if (id == 0)
@@ -110,6 +125,18 @@ void item_free(item *it) {
     it->slabs_clsid = 0;
     it->it_flags |= ITEM_SLABBED;
     slabs_free(it, ntotal);
+}
+
+/*
+ * Returns true if an item will fit in the cache (its size does not exceed
+ * the maximum for a cache entry.)
+ */
+int item_size_ok(char *key, int flags, int nbytes) {
+    char prefix[40];
+    int keylen, nsuffix;
+
+    return slabs_clsid(item_make_header(key, flags, nbytes,
+                                        prefix, &nsuffix, &keylen)) != 0;
 }
 
 void item_link_q(item *it) { /* item is the new head */

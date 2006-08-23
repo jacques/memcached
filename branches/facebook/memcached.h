@@ -268,6 +268,7 @@ void assoc_delete(char *key);
 void item_init(void);
 item *item_alloc(char *key, int flags, rel_time_t exptime, int nbytes);
 void item_free(item *it);
+int item_size_ok(char *key, int flags, int nbytes);
 
 int item_link(item *it);    /* may fail if transgresses limits */
 void item_unlink(item *it);

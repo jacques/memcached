@@ -817,7 +817,10 @@ void process_command(conn *c, char *command) {
         it = item_alloc(key, flags, realtime(expire), len+2);
 
         if (it == 0) {
-            out_string(c, "SERVER_ERROR out of memory");
+            if (! item_size_ok(key, flags, len + 2))
+                out_string(c, "SERVER_ERROR object too large for cache");
+            else
+                out_string(c, "SERVER_ERROR out of memory");
             /* swallow the data line */
             c->write_and_go = conn_swallow;
             c->sbytes = len+2;
