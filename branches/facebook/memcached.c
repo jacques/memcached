@@ -422,18 +422,24 @@ int ensure_iov_space(conn *c) {
  * Returns 0 on success, -1 on out-of-memory.
  */
 
-/* TODO: can this *buf be const? */
-int add_iov(conn *c, void *buf, int len) {
+int add_iov(conn *c, const void *buf, int len) {
     struct msghdr *m;
     int i;
     int leftover;
+    int limit_to_mtu;
 
     do {
         m = &c->msglist[c->msgused - 1];
 
+	/*
+	 * Limit UDP packets, and the first payloads of TCP replies, to
+	 * UDP_MAX_PAYLOAD_SIZE bytes.
+	 */
+	limit_to_mtu = c->udp || (1 == c->msgused);
+
         /* We may need to start a new msghdr if this one is full. */
         if (m->msg_iovlen == IOV_MAX ||
-                c->udp && c->msgbytes >= UDP_MAX_PAYLOAD_SIZE) {
+                limit_to_mtu && c->msgbytes >= UDP_MAX_PAYLOAD_SIZE) {
             add_msghdr(c);
             m = &c->msglist[c->msgused - 1];
         }
@@ -442,7 +448,7 @@ int add_iov(conn *c, void *buf, int len) {
             return -1;
 
         /* If the fragment is too big to fit in the datagram, split it up */
-        if (c->udp && len + c->msgbytes > UDP_MAX_PAYLOAD_SIZE) {
+        if (limit_to_mtu && len + c->msgbytes > UDP_MAX_PAYLOAD_SIZE) {
             leftover = len + c->msgbytes - UDP_MAX_PAYLOAD_SIZE;
             len -= leftover;
         } else {
