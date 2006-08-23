@@ -431,11 +431,11 @@ int add_iov(conn *c, const void *buf, int len) {
     do {
         m = &c->msglist[c->msgused - 1];
 
-	/*
-	 * Limit UDP packets, and the first payloads of TCP replies, to
-	 * UDP_MAX_PAYLOAD_SIZE bytes.
-	 */
-	limit_to_mtu = c->udp || (1 == c->msgused);
+        /*
+         * Limit UDP packets, and the first payloads of TCP replies, to
+         * UDP_MAX_PAYLOAD_SIZE bytes.
+         */
+        limit_to_mtu = c->udp || (1 == c->msgused);
 
         /* We may need to start a new msghdr if this one is full. */
         if (m->msg_iovlen == IOV_MAX ||
