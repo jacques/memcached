@@ -176,9 +176,9 @@ conn *conn_new(int sfd, int init_state, int event_flags, int read_buffer_size,
 
         c->rsize = read_buffer_size;
         c->wsize = DATA_BUFFER_SIZE;
-        c->isize = 200;    /* TODO: make these two things #define'd if not runtime */
-        c->iovsize = 200;  /* TODO: can this be different on init, or must it be c->isize?  two magic values is code is bad */
-        c->msgsize = 10;  /* TODO: likewise, what is this magic constant? */
+        c->isize = ITEM_LIST_INITIAL;
+        c->iovsize = IOV_LIST_INITIAL;
+        c->msgsize = MSG_LIST_INITIAL;
         c->hdrsize = 0;
 
         c->rbuf = (char *) malloc(c->rsize);
@@ -277,6 +277,27 @@ void conn_cleanup(conn *c) {
     }
 }
 
+/*
+ * Frees a connection.
+ */
+static void conn_free(conn *c) {
+    if (c) {
+        if (c->hdrbuf)
+            free(c->hdrbuf);
+        if (c->msglist)
+            free(c->msglist);
+        if (c->rbuf)
+            free(c->rbuf);
+        if (c->wbuf)
+            free(c->wbuf);
+        if (c->ilist)
+            free(c->ilist);
+        if (c->iov)
+            free(c->iov);
+        free(c);
+    }
+}
+
 void conn_close(conn *c) {
     /* delete the event, the socket and the conn */
     event_del(&c->event);
@@ -287,8 +308,11 @@ void conn_close(conn *c) {
     close(c->sfd);
     conn_cleanup(c);
 
-    /* if we have enough space in the free connections array, put the structure there */
-    if (freecurr < freetotal) {
+    /* if the connection has big buffers, just free it */
+    if (c->rsize > READ_BUFFER_HIGHWAT) {
+        conn_free(c);
+    } else if (freecurr < freetotal) {
+        /* if we have enough space in the free connections array, put the structure there */
         freeconns[freecurr++] = c;
     } else {
         /* try to enlarge free connections array */
@@ -298,20 +322,69 @@ void conn_close(conn *c) {
             freeconns = new_freeconns;
             freeconns[freecurr++] = c;
         } else {
-            if (c->hdrbuf)
-                free(c->hdrbuf);
-            free(c->msglist);
-            free(c->rbuf);
-            free(c->wbuf);
-            free(c->ilist);
-            free(c->iov);
-            free(c);
+            conn_free(c);
         }
     }
 
     stats.curr_conns--;
 
     return;
+}
+
+/*
+ * Reallocates memory and updates a buffer size if successful.
+ */
+int do_realloc(void **orig, int newsize, int bytes_per_item, int *size) {
+    void *newbuf = realloc(*orig, newsize * bytes_per_item);
+    if (newbuf) {
+        *orig = newbuf;
+        *size = newsize;
+       return 1;
+    }
+    return 0;
+}
+
+ /*
+ * Shrinks a connection's buffers if they're too big.  This prevents
+ * periodic large "get" requests from permanently chewing lots of server
+ * memory.
+ *
+ * This should only be called in between requests since it can wipe output
+ * buffers!
+ */
+void conn_shrink(conn *c) {
+    if (c->udp)
+        return;
+
+    if (c->rsize > READ_BUFFER_HIGHWAT && c->rbytes < DATA_BUFFER_SIZE) {
+       do_realloc((void **)&c->rbuf, DATA_BUFFER_SIZE, 1, &c->rsize);
+    }
+
+    if (c->isize > ITEM_LIST_HIGHWAT) {
+        do_realloc((void **)&c->ilist, ITEM_LIST_INITIAL, sizeof(c->ilist[0]), &c->isize);
+    }
+
+    if (c->msgsize > MSG_LIST_HIGHWAT) {
+        do_realloc((void **)&c->msglist, MSG_LIST_INITIAL, sizeof(c->msglist[0]), &c->msgsize);
+    }
+
+    if (c->iovsize > IOV_LIST_HIGHWAT) {
+        do_realloc((void **)&c->iov, IOV_LIST_INITIAL, sizeof(c->iov[0]), &c->iovsize);
+    }
+}
+
+/*
+ * Sets a connection's current state in the state machine. Any special
+ * processing that needs to happen on certain state transitions can
+ * happen here.
+ */
+void conn_set_state(conn *c, int state) {
+    if (state != c->state) {
+        if (state == conn_read) {
+            conn_shrink(c);
+        }
+        c->state = state;
+    }
 }
 
 
@@ -448,7 +521,7 @@ void out_string(conn *c, char *str) {
     c->wbytes = len + 2;
     c->wcurr = c->wbuf;
 
-    c->state = conn_write;
+    conn_set_state(c, conn_write);
     c->write_and_go = conn_read;
     return;
 }
@@ -614,7 +687,7 @@ void process_stat(conn *c, char *command) {
         c->write_and_free=wbuf;
         c->wcurr=wbuf;
         c->wbytes = res + 6;
-        c->state = conn_write;
+        conn_set_state(c, conn_write);
         c->write_and_go = conn_read;
         close(fd);
         return;
@@ -638,7 +711,7 @@ void process_stat(conn *c, char *command) {
         c->write_and_free = buf;
         c->wcurr = buf;
         c->wbytes = bytes;
-        c->state = conn_write;
+        conn_set_state(c, conn_write);
         c->write_and_go = conn_read;
         return;
     }
@@ -653,7 +726,7 @@ void process_stat(conn *c, char *command) {
         c->write_and_free = buf;
         c->wcurr = buf;
         c->wbytes = bytes;
-        c->state = conn_write;
+        conn_set_state(c, conn_write);
         c->write_and_go = conn_read;
         return;
     }
@@ -676,7 +749,7 @@ void process_stat(conn *c, char *command) {
         c->write_and_free = buf;
         c->wcurr = buf;
         c->wbytes = bytes;
-        c->state = conn_write;
+        conn_set_state(c, conn_write);
         c->write_and_go = conn_read;
         return;
     }
@@ -749,7 +822,7 @@ void process_command(conn *c, char *command) {
         c->item = it;
         c->ritem = ITEM_data(it);
         c->rlbytes = it->nbytes;
-        c->state = conn_nread;
+        conn_set_state(c, conn_nread);
         return;
     }
 
@@ -918,7 +991,7 @@ void process_command(conn *c, char *command) {
             out_string(c, "SERVER_ERROR out of memory");
         }
         else {
-            c->state = conn_mwrite;
+            conn_set_state(c, conn_mwrite);
             c->msgcurr = 0;
         }
         return;
@@ -1037,7 +1110,7 @@ void process_command(conn *c, char *command) {
                 c->bucket = bucket;
                 c->gen = gen;
             }
-            c->state = conn_read;
+            conn_set_state(c, conn_read);
             return;
         } else {
             out_string(c, "CLIENT_ERROR bad format");
@@ -1077,7 +1150,7 @@ void process_command(conn *c, char *command) {
     }
 
     if (strcmp(command, "quit") == 0) {
-        c->state = conn_closing;
+        conn_set_state(c, conn_closing);
         return;
     }
 
@@ -1219,7 +1292,7 @@ int try_read_network(conn *c) {
         }
         if (res == 0) {
             /* connection closed */
-            c->state = conn_closing;
+            conn_set_state(c, conn_closing);
             return 1;
         }
         if (res == -1) {
@@ -1283,7 +1356,7 @@ int transmit(conn *c) {
             if (!update_event(c, EV_WRITE | EV_PERSIST)) {
                 if (settings.verbose > 0)
                     fprintf(stderr, "Couldn't update event\n");
-                c->state = conn_closing;
+                conn_set_state(c, conn_closing);
                 return TRANSMIT_HARD_ERROR;
             }
             return TRANSMIT_SOFT_ERROR;
@@ -1294,9 +1367,9 @@ int transmit(conn *c) {
             perror("Failed to write, and not due to blocking");
 
         if (c->udp)
-            c->state = conn_read;
+            conn_set_state(c, conn_read);
         else
-            c->state = conn_closing;
+            conn_set_state(c, conn_closing);
         return TRANSMIT_HARD_ERROR;
     } else {
         return TRANSMIT_COMPLETE;
@@ -1353,7 +1426,7 @@ void drive_machine(conn *c) {
             if (!update_event(c, EV_READ | EV_PERSIST)) {
                 if (settings.verbose > 0)
                     fprintf(stderr, "Couldn't update event\n");
-                c->state = conn_closing;
+                conn_set_state(c, conn_closing);
                 break;
             }
             exit = 1;
@@ -1385,14 +1458,14 @@ void drive_machine(conn *c) {
                 break;
             }
             if (res == 0) { /* end of stream */
-                c->state = conn_closing;
+                conn_set_state(c, conn_closing);
                 break;
             }
             if (res == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
                 if (!update_event(c, EV_READ | EV_PERSIST)) {
                     if (settings.verbose > 0) 
                         fprintf(stderr, "Couldn't update event\n");
-                    c->state = conn_closing;
+                    conn_set_state(c, conn_closing);
                     break;
                 }
                 exit = 1;
@@ -1401,13 +1474,13 @@ void drive_machine(conn *c) {
             /* otherwise we have a real error, on which we close the connection */
             if (settings.verbose > 0)
                 fprintf(stderr, "Failed to read, and not due to blocking\n");
-            c->state = conn_closing;
+            conn_set_state(c, conn_closing);
             break;
 
         case conn_swallow:
             /* we are reading sbytes and throwing them away */
             if (c->sbytes == 0) {
-                c->state = conn_read;
+                conn_set_state(c, conn_read);
                 break;
             }
 
@@ -1428,14 +1501,14 @@ void drive_machine(conn *c) {
                 break;
             }
             if (res == 0) { /* end of stream */
-                c->state = conn_closing;
+                conn_set_state(c, conn_closing);
                 break;
             }
             if (res == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
                 if (!update_event(c, EV_READ | EV_PERSIST)) {
                     if (settings.verbose > 0)
                         fprintf(stderr, "Couldn't update event\n");
-                    c->state = conn_closing;
+                    conn_set_state(c, conn_closing);
                     break;
                 }
                 exit = 1;
@@ -1444,7 +1517,7 @@ void drive_machine(conn *c) {
             /* otherwise we have a real error, on which we close the connection */
             if (settings.verbose > 0)
                 fprintf(stderr, "Failed to read, and not due to blocking\n");
-            c->state = conn_closing;
+            conn_set_state(c, conn_closing);
             break;
 
         case conn_write:
@@ -1458,7 +1531,7 @@ void drive_machine(conn *c) {
                         c->udp && build_udp_headers(c)) {
                     if (settings.verbose > 0)
                         fprintf(stderr, "Couldn't build response\n");
-                    c->state = conn_closing;
+                    conn_set_state(c, conn_closing);
                     break;
                 }
             }
@@ -1476,17 +1549,17 @@ void drive_machine(conn *c) {
                         c->icurr++;
                         c->ileft--;
                     }
-                    c->state = conn_read;
+                    conn_set_state(c, conn_read);
                 } else if (c->state == conn_write) {
                     if (c->write_and_free) {
                         free(c->write_and_free);
                         c->write_and_free = 0;
                     }
-                    c->state = c->write_and_go;
+                    conn_set_state(c, c->write_and_go);
                 } else {
                     if (settings.verbose > 0)
                         fprintf(stderr, "Unexpected state %d\n", c->state);
-                    c->state = conn_closing;
+                    conn_set_state(c, conn_closing);
                 }
                 break;
 
