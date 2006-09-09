@@ -8,7 +8,7 @@ memcached_debug_LDADD = $(memcached_LDADD)
 
 SUBDIRS = doc
 DIST_DIRS = scripts
-EXTRA_DIST = doc scripts TODO
+EXTRA_DIST = doc scripts TODO t
 
 test:	memcached-debug
 	prove t
