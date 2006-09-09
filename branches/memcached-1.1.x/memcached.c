@@ -292,7 +292,7 @@ void complete_nread(conn *c) {
             old_it = 0;
         }
 
-        if (old_it && old_it->exptime && old_it->exptime < now) {
+        if (old_it && old_it->exptime && old_it->exptime <= now) {
             item_unlink(old_it);
             old_it = 0;
         }
