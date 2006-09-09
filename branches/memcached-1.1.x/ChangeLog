@@ -1,4 +1,9 @@
 2006-09-09
+	* update autoconf libevent searching to match 1.2.x.
+	  should be better on FreeBSD, etc.
+
+	* fixed 64 bit issues.  passes tests now.
+
 	* import the 1.2.x test branch, and fix a bunch of on-by-one
 	  (second) errors in the expiration code.
 
