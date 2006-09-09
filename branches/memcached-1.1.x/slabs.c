@@ -52,7 +52,7 @@ static slabclass_t slabclass[POWER_LARGEST+1];
 static size_t mem_limit = 0;
 static size_t mem_malloced = 0;
 
-unsigned int slabs_clsid(unsigned int size) {
+unsigned int slabs_clsid(size_t size) {
     int res = 1;
 
     if(size==0)
@@ -155,7 +155,7 @@ int slabs_newslab(unsigned int id) {
     return 1;
 }
 
-void *slabs_alloc(unsigned int size) {
+void *slabs_alloc(size_t size) {
     slabclass_t *p;
 
     unsigned char id = slabs_clsid(size);
@@ -195,7 +195,7 @@ void *slabs_alloc(unsigned int size) {
     return 0;  /* shouldn't ever get here */
 }
 
-void slabs_free(void *ptr, unsigned int size) {
+void slabs_free(void *ptr, size_t size) {
     unsigned char id = slabs_clsid(size);
     slabclass_t *p;
 
@@ -251,7 +251,7 @@ char* slabs_stats(int *buflen) {
             total++;
         }
     }
-    bufcurr += sprintf(bufcurr, "STAT active_slabs %d\r\nSTAT total_malloced %u\r\n", total, mem_malloced);
+    bufcurr += sprintf(bufcurr, "STAT active_slabs %d\r\nSTAT total_malloced %llu\r\n", total, (unsigned long long) mem_malloced);
     bufcurr += sprintf(bufcurr, "END\r\n");
     *buflen = bufcurr - buf;
     return buf;

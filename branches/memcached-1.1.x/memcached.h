@@ -169,13 +169,13 @@ void slabs_preallocate (unsigned int maxslabs);
 
 /* Given object size, return id to use when allocating/freeing memory for object */
 /* 0 means error: can't store such a large object */
-unsigned int slabs_clsid(unsigned int size);
+unsigned int slabs_clsid(size_t size);
 
 /* Allocate object of given length. 0 on error */
-void *slabs_alloc(unsigned int size);
+void *slabs_alloc(size_t size);
 
 /* Free previously allocated object */
-void slabs_free(void *ptr, unsigned int size);
+void slabs_free(void *ptr, size_t size);
     
 /* Fill buffer with stats */
 char* slabs_stats(int *buflen);
