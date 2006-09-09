@@ -58,11 +58,12 @@ static int deltotal;
 
 int *buckets = 0; /* bucket->generation array for a managed instance */
 
+/* no. of seconds in 30 days - largest possible delta exptime */
+#define REALTIME_MAXDELTA 60*60*24*30
+
 time_t realtime(time_t exptime) {
     time_t now;
 
-    /* no. of seconds in 30 days - largest possible delta exptime */
-    #define REALTIME_MAXDELTA 60*60*24*30
 
     if (exptime == 0) return 0; /* 0 means never expire */
 
@@ -595,7 +596,7 @@ void process_command(conn *c, char *command) {
         if (it && (it->it_flags & ITEM_DELETED)) {
             it = 0;
         }
-        if (it && it->exptime && it->exptime < now) {
+        if (it && it->exptime && it->exptime <= now) {
             item_unlink(it);
             it = 0;
         }
@@ -676,7 +677,7 @@ void process_command(conn *c, char *command) {
                 item_unlink(it);
                 it = 0;
             }
-            if (it && it->exptime && it->exptime < now) {
+            if (it && it->exptime && it->exptime <= now) {
                 item_unlink(it);
                 it = 0;
             }
@@ -1384,7 +1385,7 @@ void delete_handler(int fd, short which, void *arg) {
         time_t now = time(0);
         for (i=0; i<delcurr; i++) {
             item *it = todelete[i];
-            if (it->exptime < now) {
+            if (it->exptime <= now) {
                 assert(it->refcount > 0);
                 it->it_flags &= ~ITEM_DELETED;
                 item_unlink(it);
