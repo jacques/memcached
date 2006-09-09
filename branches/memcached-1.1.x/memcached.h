@@ -24,7 +24,7 @@ struct stats {
 };
 
 struct settings {
-    unsigned int maxbytes;
+    size_t maxbytes;
     int maxconns;
     int port;
     struct in_addr interface;
@@ -157,7 +157,7 @@ time_t realtime(time_t exptime);
 /* slabs memory allocation */
 
 /* Init the subsystem. The argument is the limit on no. of bytes to allocate, 0 if no limit */
-void slabs_init(unsigned int limit);
+void slabs_init(size_t limit);
 
 /* Preallocate as many slab pages as possible (called from slabs_init)
    on start-up, so users don't get confused out-of-memory errors when

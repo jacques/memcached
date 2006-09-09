@@ -49,8 +49,8 @@ typedef struct {
 } slabclass_t;
 
 static slabclass_t slabclass[POWER_LARGEST+1];
-static unsigned int mem_limit = 0;
-static unsigned int mem_malloced = 0;
+static size_t mem_limit = 0;
+static size_t mem_malloced = 0;
 
 unsigned int slabs_clsid(unsigned int size) {
     int res = 1;
@@ -67,7 +67,7 @@ unsigned int slabs_clsid(unsigned int size) {
     return res;
 }
 
-void slabs_init(unsigned int limit) {
+void slabs_init(size_t limit) {
     int i;
     int size=1;
 
@@ -84,7 +84,22 @@ void slabs_init(unsigned int limit) {
         slabclass[i].killing = 0;
     }
 
-    slabs_preallocate(limit / POWER_BLOCK);
+    /* for the test suite:  faking of how much we've already malloc'd */
+    {
+        char *t_initial_malloc = getenv("T_MEMD_INITIAL_MALLOC");
+        if (t_initial_malloc) {
+            mem_malloced = atol(getenv("T_MEMD_INITIAL_MALLOC"));
+        }
+    }
+
+    /* pre-allocate slabs by default, unless the environment variable
+       for testing is set to something non-zero */
+    {
+        char *pre_alloc = getenv("T_MEMD_SLABS_ALLOC");
+        if (!pre_alloc || atoi(pre_alloc)) {
+            slabs_preallocate(limit / POWER_BLOCK);
+        }
+    }
 }
 
 void slabs_preallocate (unsigned int maxslabs) {
