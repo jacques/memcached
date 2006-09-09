@@ -1,4 +1,4 @@
-bin_PROGRAMS = memcached-debug
+bin_PROGRAMS = memcached memcached-debug
 
 memcached_SOURCES = memcached.c slabs.c items.c assoc.c memcached.h
 memcached_debug_SOURCES = $(memcached_SOURCES)
