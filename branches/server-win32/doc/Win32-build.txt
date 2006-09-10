@@ -1,0 +1,19 @@
+Compilation using Visual Studio 8:
+
+1) build libevent-1.1b as a Static Library after fixing some issues:
+  To build libevent you can use the Win32-libevent-1.1b.diff patch or:
+	a) You'll have to create the project files, as the ones provided in the project won't work
+	b) in the file signal-test.c:
+	   atound line 35, it says __func__, change to __FUNCTION__
+	c) in the file time-test.c:
+	   around line 17, just above #include <time.h> add the line:
+	     #include <Winsock2.h>
+	   around line 40, it says __func__, change to __FUNCTION__
+
+2) build memcached using the built libevent.lib
+	a) open the Win32-Prj\memcached.sln in Visual Studio
+	b) make sure you have added the path to your libevent.lib file:
+			Tools -> Options -> Projects and Solutions -> VC++ Directories -> Library files
+	c) build the solution.
+	
+Other platforms such as Cygwin or MinGW have not been tested.
