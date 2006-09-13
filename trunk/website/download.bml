@@ -4,10 +4,18 @@ body<=
 
 <?h1 Download Server h1?>
 
-<p>The server is licensed under the BSD License.  Read the <a href="http://cvs.danga.com/browse.cgi/wcmtools/memcached/ChangeLog?rev=HEAD&amp;content-type=text/plain">ChangeLog</a> for details on what's new.</p>
+<p>The server is licensed under the BSD License.</p>
+
+<?h2 Main (1.2.x) series: h2?>
 
 <ul>
-<li><a href="dist/memcached-1.1.12.tar.gz">memcached-1.1.12.tar.gz</a> -- Apr 4, 2005
+<li><a href="dist/memcached-1.2.0.tar.gz">memcached-1.2.0.tar.gz</a> -- Sep 9, 2006
+</ul>
+
+<?h2 Old (1.1.x) series, now maintenance releases only: h2?>
+
+<ul>
+<li><a href="dist/memcached-1.1.13.tar.gz">memcached-1.1.13.tar.gz</a> -- Sep 9, 2006
 </ul>
 
 <?h1 Download Client APIs h1?>
