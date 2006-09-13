@@ -6,13 +6,13 @@ body<=
 
 <p>The server is licensed under the BSD License.</p>
 
-<?h2 Main (1.2.x) series: h2?>
+<p>Main (1.2.x) series:</p>
 
 <ul>
 <li><a href="dist/memcached-1.2.0.tar.gz">memcached-1.2.0.tar.gz</a> -- Sep 9, 2006
 </ul>
 
-<?h2 Old (1.1.x) series, now maintenance releases only: h2?>
+<p>Old (1.1.x) series, now maintenance releases only:</p>
 
 <ul>
 <li><a href="dist/memcached-1.1.13.tar.gz">memcached-1.1.13.tar.gz</a> -- Sep 9, 2006
