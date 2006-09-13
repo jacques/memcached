@@ -15,7 +15,7 @@ body<=
 <p>Old (1.1.x) series, now maintenance releases only:</p>
 
 <ul>
-<li><a href="dist/memcached-1.1.13.tar.gz">memcached-1.1.13.tar.gz</a> -- Sep 9, 2006 [<a href="http://code.sixapart.com/svn/memcached/tags/1.1.13/server/ChangeLog">Changes</a>]
+<li><a href="dist/memcached-1.1.13.tar.gz">memcached-1.1.13.tar.gz</a> -- Sep 9, 2006 [<a href="http://code.sixapart.com/svn/memcached/tags/1.1.13/ChangeLog">Changes</a>]
 </ul>
 
 <?h1 Download Client APIs h1?>
