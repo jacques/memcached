@@ -25,12 +25,11 @@ the memcached.</p>
 <p>The Python client we'd previously released was just a prototype, and we don't have regular Python programmers on hand.  The folks at Tummy.com have took over maintenance.  See <a href="ftp://ftp.tummy.com/pub/python-memcached/">ftp://ftp.tummy.com/pub/python-memcached/</a> for the latest versions.</p>
 
 <?h1 Ruby API h1?>
-<p>A Ruby API is available from Michael Granger at:</p>
 
 <ul>
 <li><a href="http://www.deveiate.org/code/Ruby-MemCache.html">http://www.deveiate.org/code/Ruby-MemCache.html</a></li>
+<li>gem install memcache-client</li>
 </ul>
-
 
 <?h1 Java API h1?>
 <p>A Java API is maintained by <a href="mailto:greg@meetup.com">Greg Whalin</a> from <a href="http://www.meetup.com/">Meetup.com</a>.  You can find that library here:
