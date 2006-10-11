@@ -94,8 +94,12 @@ __inline int sendmsg(int s, const struct msghdr *msg, int flags)
 	for(cp = wrkbuf, ep = wrkbuf + MAXPACKETSIZE; --len >= 0; iov++) {
 		int plen = iov->iov_len;
 		if (cp + plen >= ep) {
-			WSASetLastError(E2BIG);
-			return -1;
+			if(cp == wrkbuf) {
+				WSASetLastError(E2BIG);
+				return -1;
+			}
+			ret = send(s, (char*)wrkbuf, cp - wrkbuf, flags);
+			cp = wrkbuf;
 		}
 		memcpy(cp, iov->iov_base, plen);
 		cp += plen;
