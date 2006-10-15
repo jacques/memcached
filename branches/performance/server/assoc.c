@@ -581,7 +581,7 @@ int assoc_insert(item *it) {
     uint32_t hv;
     int oldbucket;
 
-    assert(assoc_find(key) == 0);  /* shouldn't have duplicately named things defined */
+    assert(assoc_find(ITEM_key(it)) == 0);  /* shouldn't have duplicately named things defined */
 
     hv = hash(ITEM_key(it), strlen(ITEM_key(it)), 0);
     if (expanding &&
