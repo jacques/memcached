@@ -1,3 +1,8 @@
+2006-10-15
+	* Steven Grimm <sgrimm@facebook.com>: Dynamic sizing of hashtable to
+	  reduce collisions on very large caches and conserve memory on
+	  small caches.
+
 2006-10-13
 	* Steven Grimm <sgrimm@facebook.com>: New faster hash function.
 

@@ -430,6 +430,7 @@ void conn_set_state(conn *c, int state) {
     if (state != c->state) {
         if (state == conn_read) {
             conn_shrink(c);
+            assoc_move_next_bucket();
         }
         c->state = state;
     }

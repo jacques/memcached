@@ -256,9 +256,10 @@ void stats_init(void);
 void settings_init(void);
 /* associative array */
 void assoc_init(void);
-item *assoc_find(char *key);
-int assoc_insert(char *key, item *item);
-void assoc_delete(char *key);
+item *assoc_find(const char *key);
+int assoc_insert(item *item);
+void assoc_delete(const char *key);
+void assoc_move_next_bucket(void);
 void item_init(void);
 item *item_alloc(char *key, int flags, rel_time_t exptime, int nbytes);
 void item_free(item *it);
