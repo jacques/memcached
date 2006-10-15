@@ -69,6 +69,7 @@ struct settings settings;
 static item **todelete = 0;
 static int delcurr;
 static int deltotal;
+static conn *listen_conn;
 
 #define TRANSMIT_COMPLETE   0
 #define TRANSMIT_INCOMPLETE 1
@@ -354,6 +355,7 @@ void conn_close(conn *c) {
         fprintf(stderr, "<%d connection closed.\n", c->sfd);
 
     close(c->sfd);
+    accept_new_conns(1);
     conn_cleanup(c);
 
     /* if the connection has big buffers, just free it */
@@ -1343,6 +1345,24 @@ int update_event(conn *c, int new_flags) {
 }
 
 /*
+ * Sets whether we are listening for new connections or not.
+ */
+int accept_new_conns(int do_accept) {
+    if (do_accept) {
+        update_event(listen_conn, EV_READ | EV_PERSIST);
+        if (listen(listen_conn->sfd, 1024)) {
+            perror("listen");
+        }
+    }
+    else {
+        update_event(listen_conn, 0);
+        if (listen(listen_conn->sfd, 0)) {
+            perror("listen");
+        }
+    }
+}
+
+/*
  * Transmit the next chunk of data from our list of msgbuf structures.
  *
  * Returns:
@@ -1422,6 +1442,10 @@ void drive_machine(conn *c) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
                     exit = 1;
                     break;
+                } else if (errno == EMFILE) {
+                    if (settings.verbose > 0)
+                        fprintf(stderr, "Too many open connections\n");
+                    accept_new_conns(0);
                 } else {
                     perror("accept()");
                 }
@@ -2011,7 +2035,6 @@ void sig_handler(int sig) {
 
 int main (int argc, char **argv) {
     int c;
-    conn *l_conn;
     conn *u_conn;
     struct in_addr addr;
     int lock_memory = 0;
@@ -2256,7 +2279,7 @@ int main (int argc, char **argv) {
         exit(1);
     }
     /* create the initial listening connection */
-    if (!(l_conn = conn_new(l_socket, conn_listening, EV_READ | EV_PERSIST, 1, 0))) {
+    if (!(listen_conn = conn_new(l_socket, conn_listening, EV_READ | EV_PERSIST, 1, 0))) {
         fprintf(stderr, "failed to create listening connection");
         exit(1);
     }
