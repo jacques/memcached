@@ -490,8 +490,7 @@ void assoc_init(void) {
     memset(primary_hashtable, 0, hash_size);
 }
 
-item *assoc_find(const char *key) {
-    int nkey = strlen(key);
+item *assoc_find(const char *key, size_t nkey) {
     uint32_t hv = hash(key, nkey, 0);
     item *it;
     int oldbucket;
@@ -505,8 +504,10 @@ item *assoc_find(const char *key) {
     }
 
     while (it) {
-        if (strcmp(key, ITEM_key(it)) == 0)
+        if ((nkey == it->nkey) &&
+            (memcmp(key, ITEM_key(it), nkey) == 0)) {
             return it;
+        }
         it = it->h_next;
     }
     return 0;
@@ -515,8 +516,8 @@ item *assoc_find(const char *key) {
 /* returns the address of the item pointer before the key.  if *item == 0,
    the item wasn't found */
 
-static item** _hashitem_before (const char *key) {
-    uint32_t hv = hash(key, strlen(key), 0);
+static item** _hashitem_before (const char *key, size_t nkey) {
+    uint32_t hv = hash(key, nkey, 0);
     item **pos;
     int oldbucket;
 
@@ -528,7 +529,7 @@ static item** _hashitem_before (const char *key) {
         pos = &primary_hashtable[hv & hashmask(hashpower)];
     }
 
-    while (*pos && strcmp(key, ITEM_key(*pos))) {
+    while (*pos && ((nkey != (*pos)->nkey) || memcmp(key, ITEM_key(*pos), nkey))) {
         pos = &(*pos)->h_next;
     }
     return pos;
@@ -561,7 +562,7 @@ void assoc_move_next_bucket(void) {
         for (it = old_hashtable[expand_bucket]; NULL != it; it = next) {
 	    next = it->h_next;
 
-            bucket = hash(ITEM_key(it), strlen(ITEM_key(it)), 0) & hashmask(hashpower);
+            bucket = hash(ITEM_key(it), it->nkey, 0) & hashmask(hashpower);
             it->h_next = primary_hashtable[bucket];
             primary_hashtable[bucket] = it;
 	}
@@ -581,9 +582,9 @@ int assoc_insert(item *it) {
     uint32_t hv;
     int oldbucket;
 
-    assert(assoc_find(ITEM_key(it)) == 0);  /* shouldn't have duplicately named things defined */
+    assert(assoc_find(ITEM_key(it), it->nkey) == 0);  /* shouldn't have duplicately named things defined */
 
-    hv = hash(ITEM_key(it), strlen(ITEM_key(it)), 0);
+    hv = hash(ITEM_key(it), it->nkey, 0);
     if (expanding &&
         (oldbucket = (hv & hashmask(hashpower - 1))) >= expand_bucket)
     {
@@ -602,8 +603,8 @@ int assoc_insert(item *it) {
     return 1;
 }
 
-void assoc_delete(const char *key) {
-    item **before = _hashitem_before(key);
+void assoc_delete(const char *key, size_t nkey) {
+    item **before = _hashitem_before(key, nkey);
 
     if (*before) {
         item *nxt = (*before)->h_next;
