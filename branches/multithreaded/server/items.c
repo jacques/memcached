@@ -324,3 +324,45 @@ char* item_stats_sizes(int *bytes) {
     free(histogram);
     return buf;
 }
+
+/* returns true if a deleted item's delete-locked-time is over, and it
+   should be removed from the namespace */
+int item_delete_lock_over (item *it) {
+    assert(it->it_flags & ITEM_DELETED);
+    return (current_time >= it->exptime);
+}
+
+/* wrapper around assoc_find which does the lazy expiration/deletion logic */
+item *item_get_notedeleted(char *key, size_t nkey, int *delete_locked) {
+    item *it = assoc_find(key, nkey);
+    if (delete_locked) *delete_locked = 0;
+    if (it && (it->it_flags & ITEM_DELETED)) {
+        /* it's flagged as delete-locked.  let's see if that condition
+           is past due, and the 5-second delete_timer just hasn't
+           gotten to it yet... */
+        if (! item_delete_lock_over(it)) {
+            if (delete_locked) *delete_locked = 1;
+            it = 0;
+        }
+    }
+    if (it && settings.oldest_live && settings.oldest_live <= current_time &&
+        it->time <= settings.oldest_live) {
+        item_unlink(it);
+        it = 0;
+    }
+    if (it && it->exptime && it->exptime <= current_time) {
+        item_unlink(it);
+        it = 0;
+    }
+    return it;
+}
+
+item *item_get(char *key, size_t nkey) {
+    return item_get_notedeleted(key, nkey, 0);
+}
+
+/* returns an item whether or not it's delete-locked or expired. */
+item *item_get_nocheck(char *key, size_t nkey) {
+    item *it = assoc_find(key, nkey);
+    return it;
+}

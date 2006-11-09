@@ -118,42 +118,6 @@ void settings_init(void) {
     settings.chunk_size = 48;         /* space for a modest key and value */
 }
 
-/* returns true if a deleted item's delete-locked-time is over, and it
-   should be removed from the namespace */
-int item_delete_lock_over (item *it) {
-    assert(it->it_flags & ITEM_DELETED);
-    return (current_time >= it->exptime);
-}
-
-/* wrapper around assoc_find which does the lazy expiration/deletion logic */
-item *get_item_notedeleted(char *key, size_t nkey, int *delete_locked) {
-    item *it = assoc_find(key, nkey);
-    if (delete_locked) *delete_locked = 0;
-    if (it && (it->it_flags & ITEM_DELETED)) {
-        /* it's flagged as delete-locked.  let's see if that condition
-           is past due, and the 5-second delete_timer just hasn't
-           gotten to it yet... */
-        if (! item_delete_lock_over(it)) {
-            if (delete_locked) *delete_locked = 1;
-            it = 0;
-        }
-    }
-    if (it && settings.oldest_live && settings.oldest_live <= current_time &&
-        it->time <= settings.oldest_live) {
-        item_unlink(it);
-        it = 0;
-    }
-    if (it && it->exptime && it->exptime <= current_time) {
-        item_unlink(it);
-        it = 0;
-    }
-    return it;
-}
-
-item *get_item(char *key, size_t nkey) {
-    return get_item_notedeleted(key, nkey, 0);
-}
-
 /*
  * Adds a message header to a connection.
  *
@@ -599,7 +563,7 @@ void complete_nread(conn *c) {
         goto err;
     }
 
-    old_it = get_item_notedeleted(key, it->nkey, &delete_locked);
+    old_it = item_get_notedeleted(key, it->nkey, &delete_locked);
 
     if (old_it && comm == NREAD_ADD) {
         item_update(old_it);  /* touches item, promotes to head of LRU */
@@ -621,8 +585,8 @@ void complete_nread(conn *c) {
         /* but "set" commands can override the delete lock
          window... in which case we have to find the old hidden item
          that's in the namespace/LRU but wasn't returned by
-         get_item.... because we need to replace it (below) */
-        old_it = assoc_find(key, it->nkey);
+         item_get.... because we need to replace it (below) */
+        old_it = item_get_nocheck(key, it->nkey);
     }
 
     if (old_it)
@@ -937,7 +901,7 @@ inline void process_get_command(conn *c, token_t* tokens, size_t ntokens) {
             }
                 
             stats.get_cmds++;
-            it = get_item(key, nkey);
+            it = item_get(key, nkey);
             if (it) {
                 if (i >= c->isize) {
                     item **new_list = realloc(c->ilist, sizeof(item *)*c->isize*2);
@@ -1092,7 +1056,7 @@ void process_arithmetic_command(conn *c, token_t* tokens, size_t ntokens, int in
         }
     }
 
-    it = get_item(key, nkey);
+    it = item_get(key, nkey);
     if (!it) {
         out_string(c, "NOT_FOUND");
         return;
@@ -1177,7 +1141,7 @@ void process_delete_command(conn *c, token_t* tokens, size_t ntokens) {
         }
     }
 
-    it = get_item(key, nkey);
+    it = item_get(key, nkey);
     if (!it) {
         out_string(c, "NOT_FOUND");
         return;

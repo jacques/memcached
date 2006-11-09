@@ -282,6 +282,9 @@ int item_replace(item *it, item *new_it);
 char *item_cachedump(unsigned int slabs_clsid, unsigned int limit, unsigned int *bytes);
 char *item_stats_sizes(int *bytes);
 void item_stats(char *buffer, int buflen);
+item *item_get_notedeleted(char *key, size_t nkey, int *delete_locked);
+item *item_get_nocheck(char *key, size_t nkey);
+item *item_get(char *key, size_t nkey);
 
 /* time handling */
 void set_current_time ();  /* update the global variable holding
