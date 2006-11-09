@@ -1027,13 +1027,11 @@ void process_update_command(conn *c, token_t* tokens, size_t ntokens, int comm) 
 
 void process_arithmetic_command(conn *c, token_t* tokens, size_t ntokens, int incr) {
     char temp[32];
-    unsigned int value;
     item *it;
     unsigned int delta;
     char *key;
     size_t nkey;
-    int res;
-    char *ptr;
+    char *msg;
     
     if(tokens[KEY_TOKEN].length > KEY_MAX_LENGTH) { 
         out_string(c, "CLIENT_ERROR bad command line format");
@@ -1056,12 +1054,6 @@ void process_arithmetic_command(conn *c, token_t* tokens, size_t ntokens, int in
         }
     }
 
-    it = item_get(key, nkey);
-    if (!it) {
-        out_string(c, "NOT_FOUND");
-        return;
-    }
-
     delta = strtoul(tokens[2].value, NULL, 10);
         
     if(errno == ERANGE) {
@@ -1069,40 +1061,61 @@ void process_arithmetic_command(conn *c, token_t* tokens, size_t ntokens, int in
         return;
     }
 
+    it = item_get(key, nkey);
+    if (!it) {
+        out_string(c, "NOT_FOUND");
+        return;
+    }
+
+    out_string(c, add_delta(it, incr, delta, temp));
+}
+
+/*
+ * adds a delta value to a numeric item.
+ *
+ * it    item to adjust
+ * incr  true to increment value, false to decrement
+ * delta amount to adjust value by
+ * buf   buffer for response string
+ * 
+ * returns a response string to send back to the client.
+ */
+char *add_delta(item *it, int incr, unsigned int delta, char *buf) {
+    char *ptr;
+    unsigned int value;
+    int res;
+
     ptr = ITEM_data(it);
     while (*ptr && (*ptr<'0' && *ptr>'9')) ptr++;    // BUG: can't be true
         
     value = strtol(ptr, NULL, 10);
 
     if(errno == ERANGE) {
-        out_string(c, "CLIENT_ERROR cannot increment or decrement non-numeric value");
-        return;
+        return "CLIENT_ERROR cannot increment or decrement non-numeric value";
     }
-    
+
     if (incr)
         value+=delta;
     else {
         if (delta >= value) value = 0;
         else value-=delta;
     }
-    sprintf(temp, "%u", value);
-    res = strlen(temp);
+    sprintf(buf, "%u", value);
+    res = strlen(buf);
     if (res + 2 > it->nbytes) { /* need to realloc */
         item *new_it;
         new_it = item_alloc(ITEM_key(it), it->nkey, atoi(ITEM_suffix(it) + 1), it->exptime, res + 2 );
         if (new_it == 0) {
-            out_string(c, "SERVER_ERROR out of memory");
-            return;
+            return "SERVER_ERROR out of memory";
         }
-        memcpy(ITEM_data(new_it), temp, res);
+        memcpy(ITEM_data(new_it), buf, res);
         memcpy(ITEM_data(new_it) + res, "\r\n", 2);
         item_replace(it, new_it);
     } else { /* replace in-place */
-        memcpy(ITEM_data(it), temp, res);
+        memcpy(ITEM_data(it), buf, res);
         memset(ITEM_data(it) + res, ' ', it->nbytes-res-2);
     }
-    out_string(c, temp);
-    return;
+    return buf;
 }
 
 void process_delete_command(conn *c, token_t* tokens, size_t ntokens) {
