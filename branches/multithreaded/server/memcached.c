@@ -15,10 +15,8 @@
  *
  *  $Id$
  */
-#include "config.h"
-#include <sys/types.h>
+#include "memcached.h"
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/signal.h>
@@ -41,12 +39,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <errno.h>
 #include <time.h>
-#include <event.h>
 #include <assert.h>
 #include <limits.h>
 
@@ -60,8 +56,6 @@
 # define IOV_MAX 1024
 #endif
 #endif
-
-#include "memcached.h"
 
 struct stats stats;
 struct settings settings;

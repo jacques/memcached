@@ -12,10 +12,8 @@
  *
  * $Id$
  */
-#include "config.h"
-#include <sys/types.h>
+#include "memcached.h"
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/signal.h>
 #include <sys/resource.h>
@@ -24,12 +22,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <netinet/in.h>
 #include <errno.h>
-#include <event.h>
 #include <assert.h>
-
-#include "memcached.h"
 
 /*
  * Since the hash function does bit manipulation, it needs to know
