@@ -269,7 +269,7 @@ conn *conn_new(int sfd, int init_state, int event_flags, int read_buffer_size,
 
 void conn_cleanup(conn *c) {
     if (c->item) {
-        item_free(c->item);
+        item_remove(c->item);
         c->item = 0;
     }
 
@@ -564,7 +564,7 @@ void complete_nread(conn *c) {
             out_string(c, "NOT_STORED");
         }
     }
-
+    item_remove(c->item);       /* release the c->item reference */
     c->item = 0;
 }
 
@@ -603,6 +603,8 @@ int store_item(item *it, int comm) {
         stored = 1;
      }
 
+     if (old_it)
+         item_remove(old_it);         /* release our reference */
      return stored;
 }
 
@@ -929,8 +931,8 @@ inline void process_get_command(conn *c, token_t* tokens, size_t ntokens) {
                 if (settings.verbose > 1)
                     fprintf(stderr, ">%d sending key %s\n", c->sfd, ITEM_key(it));
 
+                /* item_get() has incremented it->refcount for us */
                 stats.get_hits++;
-                it->refcount++;
                 item_update(it);
                 *(c->ilist + i) = it;
                 i++;
@@ -1024,7 +1026,6 @@ void process_update_command(conn *c, token_t* tokens, size_t ntokens, int comm) 
     c->ritem = ITEM_data(it);
     c->rlbytes = it->nbytes;
     conn_set_state(c, conn_nread);
-    return;
 }
 
 void process_arithmetic_command(conn *c, token_t* tokens, size_t ntokens, int incr) {
@@ -1070,6 +1071,7 @@ void process_arithmetic_command(conn *c, token_t* tokens, size_t ntokens, int in
     }
 
     out_string(c, add_delta(it, incr, delta, temp));
+    item_remove(it);         /* release our reference */
 }
 
 /*
@@ -1113,6 +1115,7 @@ char *add_delta(item *it, int incr, unsigned int delta, char *buf) {
         memcpy(ITEM_data(new_it), buf, res);
         memcpy(ITEM_data(new_it) + res, "\r\n", 2);
         item_replace(it, new_it);
+        item_remove(new_it);       /* release our reference */
     } else { /* replace in-place */
         memcpy(ITEM_data(it), buf, res);
         memset(ITEM_data(it) + res, ' ', it->nbytes-res-2);
@@ -1157,16 +1160,27 @@ void process_delete_command(conn *c, token_t* tokens, size_t ntokens) {
     }
 
     it = item_get(key, nkey);
-    if (!it) {
+    if (it) {
+        if (exptime == 0) {
+            item_unlink(it);
+            item_remove(it);      /* release our reference */
+            out_string(c, "DELETED");
+        } else {
+            /* our reference will be transfered to the delete queue */
+            out_string(c, defer_delete(it, exptime));
+        }
+    } else {
         out_string(c, "NOT_FOUND");
-        return;
     }
-    
-    if (exptime == 0) {
-        item_unlink(it);
-        out_string(c, "DELETED");
-        return;
-    }
+}
+
+/*
+ * Adds an item to the deferred-delete list so it can be reaped later.
+ *
+ * Returns the result to send to the client.
+ */
+char *defer_delete(item *it, time_t exptime)
+{
     if (delcurr >= deltotal) {
         item **new_delete = realloc(todelete, sizeof(item *) * deltotal * 2);
         if (new_delete) {
@@ -1177,18 +1191,17 @@ void process_delete_command(conn *c, token_t* tokens, size_t ntokens) {
              * can't delete it immediately, user wants a delay,
              * but we ran out of memory for the delete queue
              */
-            out_string(c, "SERVER_ERROR out of memory");
-            return;
+            item_remove(it);    /* release reference */
+            return "SERVER_ERROR out of memory";
         }
     }
     
-    it->refcount++;
     /* use its expiration time as its deletion time now */
     it->exptime = realtime(exptime);
     it->it_flags |= ITEM_DELETED;
     todelete[delcurr++] = it;
-    out_string(c, "DELETED");
-    return;
+
+    return "DELETED";
 }
 
 void process_command(conn *c, char *command) {
@@ -2048,21 +2061,24 @@ void delete_handler(int fd, short which, void *arg) {
     t.tv_sec = 5; t.tv_usec=0;
     evtimer_add(&deleteevent, &t);
 
-    {
-        int i, j=0;
-        for (i=0; i<delcurr; i++) {
-            item *it = todelete[i];
-            if (item_delete_lock_over(it)) {
-                assert(it->refcount > 0);
-                it->it_flags &= ~ITEM_DELETED;
-                item_unlink(it);
-                item_remove(it);
-            } else {
-                todelete[j++] = it;
-            }
+    run_deferred_deletes();
+}
+
+void run_deferred_deletes()
+{
+    int i, j=0;
+    for (i=0; i<delcurr; i++) {
+        item *it = todelete[i];
+        if (item_delete_lock_over(it)) {
+            assert(it->refcount > 0);
+            it->it_flags &= ~ITEM_DELETED;
+            item_unlink(it);
+            item_remove(it);
+        } else {
+            todelete[j++] = it;
         }
-        delcurr = j;
     }
+    delcurr = j;
 }
 
 void usage(void) {

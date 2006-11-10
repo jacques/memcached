@@ -256,6 +256,8 @@ void process_command(conn *c, char *command);
 int transmit(conn *c);
 int ensure_iov_space(conn *c);
 int add_iov(conn *c, const void *buf, int len);
+char *defer_delete(item *item, time_t exptime);
+void run_deferred_deletes(void);
 int add_msghdr(conn *c);
 char *add_delta(item *item, int incr, unsigned int delta, char *buf);
 int store_item(item *item, int comm);

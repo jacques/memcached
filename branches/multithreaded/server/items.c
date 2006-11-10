@@ -35,6 +35,17 @@ void item_init(void) {
     }
 }
 
+/* Enable this for reference-count debugging. */
+#if 0
+# define DEBUG_REFCNT(it,op) \
+                fprintf(stderr, "item %x refcnt(%c) %d %c%c%c\n", \
+                        it, op, it->refcount, \
+                        (it->it_flags & ITEM_LINKED) ? 'L' : ' ', \
+                        (it->it_flags & ITEM_SLABBED) ? 'S' : ' ', \
+                        (it->it_flags & ITEM_DELETED) ? 'D' : ' ')
+#else
+# define DEBUG_REFCNT(it,op) while(0)
+#endif
 
 /*
  * Generates the variable-sized part of the header for an object.
@@ -104,7 +115,8 @@ item *item_alloc(char *key, size_t nkey, int flags, rel_time_t exptime, int nbyt
     assert(it != heads[it->slabs_clsid]);
 
     it->next = it->prev = it->h_next = 0;
-    it->refcount = 0;
+    it->refcount = 1;     /* the caller will have a reference */
+    DEBUG_REFCNT(it, '*');
     it->it_flags = 0;
     it->nkey = nkey;
     it->nbytes = nbytes;
@@ -125,6 +137,7 @@ void item_free(item *it) {
     /* so slab size changer can tell later if item is already free or not */
     it->slabs_clsid = 0;
     it->it_flags |= ITEM_SLABBED;
+    DEBUG_REFCNT(it, 'F');
     slabs_free(it, ntotal);
 }
 
@@ -210,7 +223,10 @@ void item_unlink(item *it) {
 
 void item_remove(item *it) {
     assert((it->it_flags & ITEM_SLABBED) == 0);
-    if (it->refcount) it->refcount--;
+    if (it->refcount) {
+        it->refcount--;
+        DEBUG_REFCNT(it, '-');
+    }
     assert((it->it_flags & ITEM_DELETED) == 0 || it->refcount);
     if (it->refcount == 0 && (it->it_flags & ITEM_LINKED) == 0) {
         item_free(it);
@@ -354,6 +370,11 @@ item *item_get_notedeleted(char *key, size_t nkey, int *delete_locked) {
         item_unlink(it);
         it = 0;
     }
+
+    if (it) {
+        it->refcount++;
+        DEBUG_REFCNT(it, '+');
+    }
     return it;
 }
 
@@ -364,5 +385,9 @@ item *item_get(char *key, size_t nkey) {
 /* returns an item whether or not it's delete-locked or expired. */
 item *item_get_nocheck(char *key, size_t nkey) {
     item *it = assoc_find(key, nkey);
+    if (it) {
+        it->refcount++;
+        DEBUG_REFCNT(it, '+');
+    }
     return it;
 }
