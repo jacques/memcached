@@ -552,56 +552,58 @@ void out_string(conn *c, char *str) {
 void complete_nread(conn *c) {
     item *it = c->item;
     int comm = c->item_comm;
-    item *old_it;
-    int delete_locked = 0;
-    char *key = ITEM_key(it);
 
     stats.set_cmds++;
 
     if (strncmp(ITEM_data(it) + it->nbytes - 2, "\r\n", 2) != 0) {
         out_string(c, "CLIENT_ERROR bad data chunk");
-        goto err;
-    }
-
-    old_it = item_get_notedeleted(key, it->nkey, &delete_locked);
-
-    if (old_it && comm == NREAD_ADD) {
-        item_update(old_it);  /* touches item, promotes to head of LRU */
-        out_string(c, "NOT_STORED");
-        goto err;
-    }
-
-    if (!old_it && comm == NREAD_REPLACE) {
-        out_string(c, "NOT_STORED");
-        goto err;
-    }
-
-    if (delete_locked) {
-        if (comm == NREAD_REPLACE || comm == NREAD_ADD) {
+    } else {
+        if (store_item(it, comm)) {
+            out_string(c, "STORED");
+        } else {
             out_string(c, "NOT_STORED");
-            goto err;
         }
-
-        /* but "set" commands can override the delete lock
-         window... in which case we have to find the old hidden item
-         that's in the namespace/LRU but wasn't returned by
-         item_get.... because we need to replace it (below) */
-        old_it = item_get_nocheck(key, it->nkey);
     }
-
-    if (old_it)
-        item_replace(old_it, it);
-    else
-        item_link(it);
 
     c->item = 0;
-    out_string(c, "STORED");
-    return;
+}
 
-err:
-     item_free(it);
-     c->item = 0;
-     return;
+/*
+ * Stores an item in the cache according to the semantics of one of the set
+ * commands. In threaded mode, this is protected by the cache lock.
+ *
+ * Returns true if the item was stored.
+ */
+int store_item(item *it, int comm) {
+    char *key = ITEM_key(it);
+    int delete_locked = 0;
+    item *old_it = item_get_notedeleted(key, it->nkey, &delete_locked);
+    int stored = 0;
+
+    if (old_it && comm == NREAD_ADD) {
+        /* add only adds a nonexistent item, but promote to head of LRU */
+        item_update(old_it);
+    } else if (!old_it && comm == NREAD_REPLACE) {
+        /* replace only replaces an existing value; don't store */
+    } else if (delete_locked && (comm == NREAD_REPLACE || comm == NREAD_ADD)) {
+        /* replace and add can't override delete locks; don't store */
+    } else {
+        /* "set" commands can override the delete lock
+           window... in which case we have to find the old hidden item
+           that's in the namespace/LRU but wasn't returned by
+           item_get.... because we need to replace it */
+        if (delete_locked)
+            old_it = item_get_nocheck(key, it->nkey);
+
+        if (old_it)
+            item_replace(old_it, it);
+        else
+            item_link(it);
+
+        stored = 1;
+     }
+
+     return stored;
 }
 
 typedef struct token_s {
