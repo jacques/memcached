@@ -289,6 +289,7 @@ void item_stats(char *buffer, int buflen);
 item *item_get_notedeleted(char *key, size_t nkey, int *delete_locked);
 item *item_get_nocheck(char *key, size_t nkey);
 item *item_get(char *key, size_t nkey);
+void item_flush_expired(void);
 
 /* time handling */
 void set_current_time ();  /* update the global variable holding
