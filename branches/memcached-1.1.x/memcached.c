@@ -79,7 +79,7 @@ void stats_init(void) {
     stats.curr_items = stats.total_items = stats.curr_conns = stats.total_conns = stats.conn_structs = 0;
     stats.get_cmds = stats.set_cmds = stats.get_hits = stats.get_misses = 0;
     stats.curr_bytes = stats.bytes_read = stats.bytes_written = 0;
-    stats.started = time(0);
+    stats.started = time(0) - 2;
 }
 
 void stats_reset(void) {
@@ -846,7 +846,8 @@ void process_command(conn *c, char *command) {
         int res;
 
         if (strcmp(command, "flush_all") == 0) {
-            settings.oldest_live = time(0);
+            settings.oldest_live = time(0) - 1;
+            item_flush_expired();
             out_string(c, "OK");
             return;
         }
@@ -857,7 +858,8 @@ void process_command(conn *c, char *command) {
             return;
         }
 
-        settings.oldest_live = realtime(exptime);
+        settings.oldest_live = realtime(exptime) - 1;
+        item_flush_expired();
         out_string(c, "OK");
         return;
     }
