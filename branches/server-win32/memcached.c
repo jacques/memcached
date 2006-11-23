@@ -15,16 +15,10 @@
  *
  *  $Id$
  */
-
-#ifndef WIN32
-#include "config.h"
-#else
-#include "Win32-Code/config.h"
-#endif
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifndef WIN32
+#include "config.h"
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -50,6 +44,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #else
+#include "Win32-Code/config.h"
 #include <Winsock2.h>
 #include <process.h>
 #include "Win32-Code/ntservice.h"
@@ -108,11 +103,11 @@ void stats_init(void) {
     stats.get_cmds = stats.set_cmds = stats.get_hits = stats.get_misses = 0;
     stats.curr_bytes = stats.bytes_read = stats.bytes_written = 0;
 
-    /* make the time we started always be 1 second before we really
+    /* make the time we started always be 2 seconds before we really
        did, so time(0) - time.started is never zero.  if so, things
        like 'settings.oldest_live' which act as booleans as well as
        values are now false in boolean context... */
-    stats.started = time(0) - 1;
+    stats.started = time(0) - 2;
 }
 void stats_reset(void) {
     stats.total_items = stats.total_conns = 0;
@@ -122,7 +117,7 @@ void stats_reset(void) {
 
 void settings_init(void) {
     settings.port = 11211;
-    settings.udpport = 11211;
+    settings.udpport = 0;
     settings.interf.s_addr = htonl(INADDR_ANY);
     settings.maxbytes = 64*1024*1024; /* default is 64MB */
     settings.maxconns = 1024;         /* to limit connections-related memory to about 5MB */
@@ -855,7 +850,7 @@ void process_command(conn *c, char *command) {
 
         char key[251];
         int flags;
-        rel_time_t expire;
+        time_t expire;
         long _expire = 0;
         int len, res;
         item *it;
@@ -1178,7 +1173,8 @@ void process_command(conn *c, char *command) {
         set_current_time();
 
         if (strcmp(command, "flush_all") == 0) {
-            settings.oldest_live = current_time;
+            settings.oldest_live = current_time - 1;
+            item_flush_expired();
             out_string(c, "OK");
             return;
         }
@@ -1190,7 +1186,8 @@ void process_command(conn *c, char *command) {
             return;
         }
 
-        settings.oldest_live = realtime(exptime);
+        settings.oldest_live = realtime(exptime) - 1;
+        item_flush_expired();
         out_string(c, "OK");
         return;
     }
@@ -1430,20 +1427,20 @@ int transmit(conn *c) {
 
 void drive_machine(conn *c) {
 
-    int exit = 0;
+    int stop = 0;
     int sfd, flags = 1;
     socklen_t addrlen;
     struct sockaddr addr;
     conn *newc;
     int res;
 
-    while (!exit) {
+    while (!stop) {
         switch(c->state) {
         case conn_listening:
             addrlen = sizeof(addr);
             if ((sfd = accept(c->sfd, &addr, &addrlen)) == -1) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    exit = 1;
+                    stop = 1;
                     break;
                 } else {
                     perror("accept()");
@@ -1481,7 +1478,7 @@ void drive_machine(conn *c) {
                 conn_set_state(c, conn_closing);
                 break;
             }
-            exit = 1;
+            stop = 1;
             break;
 
         case conn_nread:
@@ -1520,7 +1517,7 @@ void drive_machine(conn *c) {
                     conn_set_state(c, conn_closing);
                     break;
                 }
-                exit = 1;
+                stop = 1;
                 break;
             }
             /* otherwise we have a real error, on which we close the connection */
@@ -1563,7 +1560,7 @@ void drive_machine(conn *c) {
                     conn_set_state(c, conn_closing);
                     break;
                 }
-                exit = 1;
+                stop = 1;
                 break;
             }
             /* otherwise we have a real error, on which we close the connection */
@@ -1578,7 +1575,7 @@ void drive_machine(conn *c) {
              * assemble it into a msgbuf list (this will be a single-entry
              * list for TCP or a two-entry list for UDP).
              */
-            if (c->iovused == 0) {
+            if (c->iovused == 0 || (c->udp && c->iovused == 1)) {
                 if (add_iov(c, c->wcurr, c->wbytes) ||
                         c->udp && build_udp_headers(c)) {
                         if (settings.verbose > 0)
@@ -1620,7 +1617,7 @@ void drive_machine(conn *c) {
                 break;                   /* Continue in state machine. */
 
             case TRANSMIT_SOFT_ERROR:
-                exit = 1;
+                stop = 1;
                     break;
                 }
             break;
@@ -1630,7 +1627,7 @@ void drive_machine(conn *c) {
                 conn_cleanup(c);
             else
             conn_close(c);
-            exit = 1;
+            stop = 1;
             break;
         }
 
@@ -1728,9 +1725,9 @@ int server_socket(int port, int is_udp) {
     if (is_udp) {
         maximize_sndbuf(sfd);
     } else {
-    setsockopt(sfd, SOL_SOCKET, SO_KEEPALIVE, (void *)&flags, sizeof(flags));
-    setsockopt(sfd, SOL_SOCKET, SO_LINGER, (void *)&ling, sizeof(ling));
-    setsockopt(sfd, IPPROTO_TCP, TCP_NODELAY, (void *)&flags, sizeof(flags));
+        setsockopt(sfd, SOL_SOCKET, SO_KEEPALIVE, (void *)&flags, sizeof(flags));
+        setsockopt(sfd, SOL_SOCKET, SO_LINGER, (void *)&ling, sizeof(ling));
+        setsockopt(sfd, IPPROTO_TCP, TCP_NODELAY, (void *)&flags, sizeof(flags));
     }
 
     /* 
@@ -1907,7 +1904,8 @@ void delete_handler(int fd, short which, void *arg) {
         
 void usage(void) {
     printf(PACKAGE " " VERSION "\n");
-    printf("-p <num>          port number to listen on\n");
+    printf("-p <num>      TCP port number to listen on (default: 11211)\n");
+    printf("-U <num>      UDP port number to listen on (default: 0, off)\n");
     printf("-s <file>     unix socket path to listen on (disables network support)\n");
     printf("-l <ip_addr>      interface to listen on, default is INDRR_ANY\n");
 #ifdef WIN32
@@ -2152,6 +2150,9 @@ int main (int argc, char **argv) {
     struct passwd *pw;
     struct sigaction sa;
     struct rlimit rlim;
+
+    /* handle SIGINT */
+    signal(SIGINT, sig_handler);
 #else
     WSADATA wsaData;
     if(WSAStartup(MAKEWORD(2,0), &wsaData) != 0) {
@@ -2173,6 +2174,9 @@ int main (int argc, char **argv) {
     while ((c = getopt(argc, argv, "bp:s:U:m:Mc:khirvd:l:u:P:f:s:")) != -1) {
 #endif
         switch (c) {
+        case 'U':
+            settings.udpport = atoi(optarg);
+            break;
         case 'b':
             settings.managed = 1;
             break;
@@ -2322,7 +2326,7 @@ int main (int argc, char **argv) {
         /* create the UDP listening socket and bind it */
         u_socket = server_socket(settings.udpport, 1);
         if (u_socket == -1) {
-            fprintf(stderr, "failed to listen\n");
+            fprintf(stderr, "failed to listen on UDP port %d\n", settings.udpport);
             exit(1);
         }
     }
@@ -2343,6 +2347,7 @@ int main (int argc, char **argv) {
             return 1;
         }
     }
+
     /* create unix mode sockets after dropping privileges */
     if (settings.socketpath) {
         l_socket = server_socket_unix(settings.socketpath);
