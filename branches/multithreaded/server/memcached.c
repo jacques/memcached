@@ -72,6 +72,8 @@ static conn *listen_conn;
 
 int *buckets = 0; /* bucket->generation array for a managed instance */
 
+void conn_free(conn *c);
+
 #define REALTIME_MAXDELTA 60*60*24*30
 rel_time_t realtime(time_t exptime) {
     /* no. of seconds in 30 days - largest possible delta exptime */
@@ -156,6 +158,9 @@ int add_msghdr(conn *c)
     return 0;
 }
 
+/*
+ * Free list management for connections.
+ */
 conn **freeconns;
 int freetotal;
 int freecurr;
@@ -167,14 +172,48 @@ void conn_init(void) {
     return;
 }
 
-conn *conn_new(int sfd, int init_state, int event_flags, int read_buffer_size,
-                int is_udp) {
+/*
+ * Returns a connection from the freelist, if any. Should call this using
+ * conn_from_freelist() for thread safety.
+ */
+conn *conn_from_freelist() {
     conn *c;
-
-    /* do we have a free conn structure from a previous close? */
+ 
     if (freecurr > 0) {
         c = freeconns[--freecurr];
-    } else { /* allocate a new one */
+    } else {
+        c = NULL;
+    }
+
+    return c;
+}
+
+/*
+ * Adds a connection to the freelist. 0 = success. Should call this using
+ * conn_add_to_freelist() for thread safety.
+ */
+int conn_add_to_freelist(conn *c) {
+    if (freecurr < freetotal) {
+        freeconns[freecurr++] = c;
+        return 0;
+    } else {
+        /* try to enlarge free connections array */
+        conn **new_freeconns = realloc(freeconns, sizeof(conn *)*freetotal*2);
+        if (new_freeconns) {
+            freetotal *= 2;
+            freeconns = new_freeconns;
+            freeconns[freecurr++] = c;
+            return 0;
+        }
+    }
+    return 1;
+}
+
+conn *conn_new(int sfd, int init_state, int event_flags,
+               int read_buffer_size, int is_udp) {
+    conn *c = conn_from_freelist();
+
+    if (NULL == c) {
         if (!(c = (conn *)malloc(sizeof(conn)))) {
             perror("malloc()");
             return 0;
@@ -246,17 +285,8 @@ conn *conn_new(int sfd, int init_state, int event_flags, int read_buffer_size,
     c->ev_flags = event_flags;
 
     if (event_add(&c->event, 0) == -1) {
-        if (freecurr < freetotal) {
-            freeconns[freecurr++] = c;
-        } else {
-            if (c->hdrbuf)
-                free (c->hdrbuf);
-            free (c->msglist);
-            free (c->rbuf);
-            free (c->wbuf);
-            free (c->ilist);
-            free (c->iov);
-            free (c);
+        if (conn_add_to_freelist(c)) {
+            conn_free(c);
         }
         return 0;
     }
@@ -288,7 +318,7 @@ void conn_cleanup(conn *c) {
 /*
  * Frees a connection.
  */
-static void conn_free(conn *c) {
+void conn_free(conn *c) {
     if (c) {
         if (c->hdrbuf)
             free(c->hdrbuf);
@@ -318,21 +348,8 @@ void conn_close(conn *c) {
     conn_cleanup(c);
 
     /* if the connection has big buffers, just free it */
-    if (c->rsize > READ_BUFFER_HIGHWAT) {
+    if (c->rsize > READ_BUFFER_HIGHWAT || conn_add_to_freelist(c)) {
         conn_free(c);
-    } else if (freecurr < freetotal) {
-        /* if we have enough space in the free connections array, put the structure there */
-        freeconns[freecurr++] = c;
-    } else {
-        /* try to enlarge free connections array */
-        conn **new_freeconns = realloc(freeconns, sizeof(conn *)*freetotal*2);
-        if (new_freeconns) {
-            freetotal *= 2;
-            freeconns = new_freeconns;
-            freeconns[freecurr++] = c;
-        } else {
-            conn_free(c);
-        }
     }
 
     stats.curr_conns--;
