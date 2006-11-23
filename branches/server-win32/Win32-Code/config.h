@@ -24,3 +24,6 @@
 
 /* Version number of package */
 #define VERSION "1.2.0"
+
+/* Machine is littleendian */
+#define ENDIAN_LITTLE 1

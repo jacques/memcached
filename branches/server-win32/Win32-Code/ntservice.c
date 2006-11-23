@@ -78,7 +78,7 @@ void WINAPI ServiceControlHandler(DWORD controlCode)
     SetServiceStatus(serviceStatusHandle, &serviceStatus);
 }
 
-void WINAPI ServiceMain(int argc, char* argv[])
+void WINAPI ServiceMain(DWORD dwNumServicesArgs, LPSTR *lpServiceArgVectors)
 {
     // initialise service status
     serviceStatus.dwServiceType = SERVICE_WIN32;

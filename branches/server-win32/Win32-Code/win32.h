@@ -13,15 +13,17 @@
 // for MSVC 6.0
 typedef          __int64    int64_t;
 typedef unsigned __int64    uint64_t;
-typedef          int        int32_t;
-typedef unsigned int        uint32_t;
 #else
 // default is GCC style
 typedef          long long  int64_t;
 typedef unsigned long long uint64_t;
+#endif // _WIN32 && _MSC_VER
 typedef          int        int32_t;
 typedef unsigned int        uint32_t;
-#endif // _WIN32 && _MSC_VER
+typedef          short      int16_t;
+typedef unsigned short      uint16_t;
+typedef          char       int8_t;
+typedef unsigned char       uint8_t;
 
 #define pid_t int
 #define close(s) closesocket(s)
