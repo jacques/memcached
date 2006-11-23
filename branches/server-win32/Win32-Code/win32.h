@@ -42,17 +42,15 @@ typedef int socklen_t;
 #define F_SETFL 4
 
 #define IOV_MAX 1024
-struct iovec
-{
-    char *iov_base;
-    int   iov_len;
+struct iovec {
+	u_long iov_len;  
+	char FAR* iov_base;
 };
-
 struct msghdr
 {
 	void	*msg_name;			/* Socket name			*/
 	int		 msg_namelen;		/* Length of name		*/
-	struct iovec *msg_iov;			/* Data blocks			*/
+	struct iovec *msg_iov;		/* Data blocks			*/
 	int		 msg_iovlen;		/* Number of blocks		*/
 	void	*msg_accrights;		/* Per protocol magic (eg BSD file descriptor passing) */ 
 	int		 msg_accrightslen;	/* Length of rights list */
@@ -87,28 +85,63 @@ __inline size_t read(int s, void *buf, size_t len)
 #define MAXPACKETSIZE (1500-28)
 __inline int sendmsg(int s, const struct msghdr *msg, int flags)
 {
+/*
+	DWORD dwBufferCount;
+	int error = WSASendTo((SOCKET) s,
+		msg->msg_iov,
+		msg->msg_iovlen,
+		&dwBufferCount,
+		flags,
+		msg->msg_name,
+		msg->msg_namelen,
+		NULL,
+		NULL
+	);
+
+	if(error == SOCKET_ERROR) {
+		dwBufferCount = -1;
+		error = WSAGetLastError();
+		if(error == WSA_IO_PENDING) {
+			WSASetLastError(EAGAIN);
+		} else if(error == WSAECONNRESET) {
+			return 0;
+		}
+	}
+	return dwBufferCount;
+
+/*/
 	int ret;
-	u_char wrkbuf[MAXPACKETSIZE];
+	char *cp, *ep;
+	char wrkbuf[MAXPACKETSIZE];
+
 	int len = msg->msg_iovlen;
 	struct iovec *iov = msg->msg_iov;
-	u_char *cp, *ep;
-
-	for(cp = wrkbuf, ep = wrkbuf + MAXPACKETSIZE; --len >= 0; iov++) {
+	for(cp = wrkbuf, ep = wrkbuf + MAXPACKETSIZE; len-- > 0; iov++) {
+		char *pp = iov->iov_base;
 		int plen = iov->iov_len;
-		if (cp + plen >= ep) {
-			if(cp == wrkbuf) {
-				WSASetLastError(E2BIG);
-				return -1;
+		int clen = (ep - cp);
+		while(plen > clen) {
+			if(cp - wrkbuf) {
+				memcpy(cp, pp, clen);
+				ret = send(s, wrkbuf, MAXPACKETSIZE, flags);
+				pp += clen;
+				plen -= clen;
+				cp = wrkbuf;
+				clen = (ep - cp);
+			} else {
+				ret = send(s, pp, clen, flags);
+				pp += clen;
+				plen -= clen;
 			}
-			ret = send(s, (char*)wrkbuf, cp - wrkbuf, flags);
-			cp = wrkbuf;
+			if(ret == -1 && WSAGetLastError() != WSAECONNRESET) return -1;
 		}
-		memcpy(cp, iov->iov_base, plen);
+		memcpy(cp, pp, plen);
 		cp += plen;
 	}
-	ret = send(s, (char*)wrkbuf, cp - wrkbuf, flags);
+	ret = send(s, wrkbuf, (cp - wrkbuf), flags);
 	if(ret == -1 && WSAGetLastError() == WSAECONNRESET) return 0;
 	return ret;
+/**/
 }
 
 #endif
