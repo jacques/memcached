@@ -12,6 +12,7 @@
  *
  * $Id$
  */
+
 #include "memcached.h"
 #include <sys/stat.h>
 #include <sys/socket.h>
@@ -535,39 +536,41 @@ static void assoc_expand(void) {
 
     primary_hashtable = calloc(hashsize(hashpower + 1), sizeof(void *));
     if (primary_hashtable) {
-	if (settings.verbose > 1)
-	    fprintf(stderr, "Hash table expansion starting\n");
+        if (settings.verbose > 1)
+            fprintf(stderr, "Hash table expansion starting\n");
         hashpower++;
         expanding = 1;
         expand_bucket = 0;
-	assoc_move_next_bucket();
+        do_assoc_move_next_bucket();
     } else {
         primary_hashtable = old_hashtable;
-	/* Bad news, but we can keep running. */
+        /* Bad news, but we can keep running. */
     }
 }
 
 /* migrates the next bucket to the primary hashtable if we're expanding. */
-void assoc_move_next_bucket(void) {
+void do_assoc_move_next_bucket(void) {
     item *it, *next;
     int bucket;
 
     if (expanding) {
         for (it = old_hashtable[expand_bucket]; NULL != it; it = next) {
-	    next = it->h_next;
+            next = it->h_next;
 
             bucket = hash(ITEM_key(it), it->nkey, 0) & hashmask(hashpower);
             it->h_next = primary_hashtable[bucket];
             primary_hashtable[bucket] = it;
-	}
+        }
 
-	expand_bucket++;
-	if (expand_bucket == hashsize(hashpower - 1)) {
-	    expanding = 0;
-	    free(old_hashtable);
-	    if (settings.verbose > 1)
-	        fprintf(stderr, "Hash table expansion done\n");
-	}
+        old_hashtable[expand_bucket] = NULL;
+
+        expand_bucket++;
+        if (expand_bucket == hashsize(hashpower - 1)) {
+            expanding = 0;
+            free(old_hashtable);
+            if (settings.verbose > 1)
+                fprintf(stderr, "Hash table expansion done\n");
+        }
     }
 }
 

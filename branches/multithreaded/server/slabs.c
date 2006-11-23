@@ -26,6 +26,7 @@
 #define POWER_LARGEST  200
 #define POWER_BLOCK 1048576
 #define CHUNK_ALIGN_BYTES (sizeof(void *))
+#define DONT_PREALLOC_SLABS
 
 /* powers-of-N allocation structures */
 
@@ -133,7 +134,7 @@ void slabs_preallocate (unsigned int maxslabs) {
     for(i=POWER_SMALLEST; i<=POWER_LARGEST; i++) {
         if (++prealloc > maxslabs)
             return;
-        slabs_newslab(i);
+        do_slabs_newslab(i);
     }
 
 }
@@ -150,7 +151,7 @@ static int grow_slab_list (unsigned int id) {
     return 1;
 }
 
-int slabs_newslab(unsigned int id) {
+int do_slabs_newslab(unsigned int id) {
     slabclass_t *p = &slabclass[id];
 #ifdef ALLOW_SLABS_REASSIGN
     int len = POWER_BLOCK;
@@ -176,7 +177,7 @@ int slabs_newslab(unsigned int id) {
     return 1;
 }
 
-void *slabs_alloc(size_t size) {
+void *do_slabs_alloc(size_t size) {
     slabclass_t *p;
 
     unsigned char id = slabs_clsid(size);
@@ -195,7 +196,7 @@ void *slabs_alloc(size_t size) {
 
     /* fail unless we have space at the end of a recently allocated page,
        we have something on our freelist, or we could allocate a new page */
-    if (! (p->end_page_ptr || p->sl_curr || slabs_newslab(id)))
+    if (! (p->end_page_ptr || p->sl_curr || do_slabs_newslab(id)))
         return 0;
 
     /* return off our freelist, if we have one */
@@ -216,7 +217,7 @@ void *slabs_alloc(size_t size) {
     return 0;  /* shouldn't ever get here */
 }
 
-void slabs_free(void *ptr, size_t size) {
+void do_slabs_free(void *ptr, size_t size) {
     unsigned char id = slabs_clsid(size);
     slabclass_t *p;
 
@@ -245,7 +246,7 @@ void slabs_free(void *ptr, size_t size) {
     return;
 }
 
-char* slabs_stats(int *buflen) {
+char* do_slabs_stats(int *buflen) {
     int i, total;
     char *buf = (char*) malloc(power_largest * 200 + 100);
     char *bufcurr = buf;
@@ -287,7 +288,7 @@ char* slabs_stats(int *buflen) {
    1 = success
    0 = fail
    -1 = tried. busy. send again shortly. */
-int slabs_reassign(unsigned char srcid, unsigned char dstid) {
+int do_slabs_reassign(unsigned char srcid, unsigned char dstid) {
     void *slab, *slab_end;
     slabclass_t *p, *dp;
     void *iter;

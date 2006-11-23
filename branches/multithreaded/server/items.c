@@ -65,7 +65,7 @@ int item_make_header(char *key, uint8_t nkey, int flags, int nbytes,
     return sizeof(item) + nkey + *nsuffix + nbytes;
 }
  
-item *item_alloc(char *key, size_t nkey, int flags, rel_time_t exptime, int nbytes) {
+item *do_item_alloc(char *key, size_t nkey, int flags, rel_time_t exptime, int nbytes) {
     int nsuffix, ntotal;
     item *it;
     unsigned int id;
@@ -100,7 +100,7 @@ item *item_alloc(char *key, size_t nkey, int flags, rel_time_t exptime, int nbyt
 
         for (search = tails[id]; tries>0 && search; tries--, search=search->prev) {
             if (search->refcount==0) {
-                item_unlink(search);
+                do_item_unlink(search);
                 break;
             }
         }
@@ -194,34 +194,38 @@ void item_unlink_q(item *it) {
     return;
 }
 
-int item_link(item *it) {
+int do_item_link(item *it) {
     assert((it->it_flags & (ITEM_LINKED|ITEM_SLABBED)) == 0);
     assert(it->nbytes < 1048576);
     it->it_flags |= ITEM_LINKED;
     it->time = current_time;
     assoc_insert(it);
 
+    STATS_LOCK();
     stats.curr_bytes += ITEM_ntotal(it);
     stats.curr_items += 1;
     stats.total_items += 1;
+    STATS_UNLOCK();
 
     item_link_q(it);
 
     return 1;
 }
 
-void item_unlink(item *it) {
+void do_item_unlink(item *it) {
     if (it->it_flags & ITEM_LINKED) {
         it->it_flags &= ~ITEM_LINKED;
+        STATS_LOCK();
         stats.curr_bytes -= ITEM_ntotal(it);
         stats.curr_items -= 1;
+        STATS_UNLOCK();
         assoc_delete(ITEM_key(it), it->nkey);
         item_unlink_q(it);
+        if (it->refcount == 0) item_free(it);
     }
-    if (it->refcount == 0) item_free(it);
 }
 
-void item_remove(item *it) {
+void do_item_remove(item *it) {
     assert((it->it_flags & ITEM_SLABBED) == 0);
     if (it->refcount) {
         it->refcount--;
@@ -233,21 +237,23 @@ void item_remove(item *it) {
     }
 }
 
-void item_update(item *it) {
+void do_item_update(item *it) {
     if (it->time < current_time - ITEM_UPDATE_INTERVAL) {
         assert((it->it_flags & ITEM_SLABBED) == 0);
 
-        item_unlink_q(it);
-        it->time = current_time;
-        item_link_q(it);
+        if (it->it_flags & ITEM_LINKED) {
+            item_unlink_q(it);
+            it->time = current_time;
+            item_link_q(it);
+        }
     }
 }
 
-int item_replace(item *it, item *new_it) {
+int do_item_replace(item *it, item *new_it) {
     assert((it->it_flags & ITEM_SLABBED) == 0);
 
-    item_unlink(it);
-    return item_link(new_it);
+    do_item_unlink(it);
+    return do_item_link(new_it);
 }
 
 char *item_cachedump(unsigned int slabs_clsid, unsigned int limit, unsigned int *bytes) {
@@ -349,7 +355,7 @@ int item_delete_lock_over (item *it) {
 }
 
 /* wrapper around assoc_find which does the lazy expiration/deletion logic */
-item *item_get_notedeleted(char *key, size_t nkey, int *delete_locked) {
+item *do_item_get_notedeleted(char *key, size_t nkey, int *delete_locked) {
     item *it = assoc_find(key, nkey);
     if (delete_locked) *delete_locked = 0;
     if (it && (it->it_flags & ITEM_DELETED)) {
@@ -363,11 +369,11 @@ item *item_get_notedeleted(char *key, size_t nkey, int *delete_locked) {
     }
     if (it && settings.oldest_live && settings.oldest_live <= current_time &&
         it->time <= settings.oldest_live) {
-        item_unlink(it);
+        do_item_unlink(it);           // MTSAFE - cache_lock held
         it = 0;
     }
     if (it && it->exptime && it->exptime <= current_time) {
-        item_unlink(it);
+        do_item_unlink(it);           // MTSAFE - cache_lock held
         it = 0;
     }
 
@@ -383,7 +389,7 @@ item *item_get(char *key, size_t nkey) {
 }
 
 /* returns an item whether or not it's delete-locked or expired. */
-item *item_get_nocheck(char *key, size_t nkey) {
+item *do_item_get_nocheck(char *key, size_t nkey) {
     item *it = assoc_find(key, nkey);
     if (it) {
         it->refcount++;
@@ -393,7 +399,7 @@ item *item_get_nocheck(char *key, size_t nkey) {
 }
 
 /* expires items that are more recent than the oldest_live setting. */
-void item_flush_expired() {
+void do_item_flush_expired() {
     int i;
     item *iter, *next;
     if (! settings.oldest_live)
@@ -408,7 +414,7 @@ void item_flush_expired() {
             if (iter->time >= settings.oldest_live) {
                 next = iter->next;
                 if ((iter->it_flags & ITEM_SLABBED) == 0) {
-                    item_unlink(iter);
+                    do_item_unlink(iter);
                 }
             } else {
                 /* We've hit the first old item. Continue to the next queue. */
