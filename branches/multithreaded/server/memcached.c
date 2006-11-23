@@ -64,6 +64,7 @@ static item **todelete = 0;
 static int delcurr;
 static int deltotal;
 static conn *listen_conn;
+static struct event_base *main_base;
 
 #define TRANSMIT_COMPLETE   0
 #define TRANSMIT_INCOMPLETE 1
@@ -210,7 +211,7 @@ int conn_add_to_freelist(conn *c) {
 }
 
 conn *conn_new(int sfd, int init_state, int event_flags,
-               int read_buffer_size, int is_udp) {
+               int read_buffer_size, int is_udp, struct event_base *base) {
     conn *c = conn_from_freelist();
 
     if (NULL == c) {
@@ -282,6 +283,7 @@ conn *conn_new(int sfd, int init_state, int event_flags,
     c->gen = 0;
 
     event_set(&c->event, sfd, event_flags, event_handler, (void *)c);
+    event_base_set(base, &c->event);
     c->ev_flags = event_flags;
 
     if (event_add(&c->event, 0) == -1) {
@@ -1529,10 +1531,12 @@ int try_read_network(conn *c) {
 }
 
 int update_event(conn *c, int new_flags) {
+    struct event_base *base = c->event.ev_base;
     if (c->ev_flags == new_flags)
         return 1;
     if (event_del(&c->event) == -1) return 0;
     event_set(&c->event, c->sfd, new_flags, event_handler, (void *)c);
+    event_base_set(base, &c->event);
     c->ev_flags = new_flags;
     if (event_add(&c->event, 0) == -1) return 0;
     return 1;
@@ -1653,7 +1657,7 @@ void drive_machine(conn *c) {
                 break;
             }
             newc = conn_new(sfd, conn_read, EV_READ | EV_PERSIST,
-                            DATA_BUFFER_SIZE, 0);
+                            DATA_BUFFER_SIZE, 0, main_base);
             if (!newc) {
                 if (settings.verbose > 0)
                     fprintf(stderr, "couldn't create new connection\n");
@@ -2055,6 +2059,7 @@ void clock_handler(int fd, short which, void *arg) {
     }
 
     evtimer_set(&clockevent, clock_handler, 0);
+    event_base_set(main_base, &clockevent);
     t.tv_sec = 1;
     t.tv_usec = 0;
     evtimer_add(&clockevent, &t);
@@ -2077,6 +2082,7 @@ void delete_handler(int fd, short which, void *arg) {
     }
 
     evtimer_set(&deleteevent, delete_handler, 0);
+    event_base_set(main_base, &deleteevent);
     t.tv_sec = 5; t.tv_usec=0;
     evtimer_add(&deleteevent, &t);
 
@@ -2436,10 +2442,11 @@ int main (int argc, char **argv) {
         }
     }
 
+    /* initialize main thread libevent instance */
+    main_base = event_init();
 
     /* initialize other stuff */
     item_init();
-    event_init();
     stats_init();
     assoc_init();
     conn_init();
@@ -2476,14 +2483,9 @@ int main (int argc, char **argv) {
         exit(1);
     }
     /* create the initial listening connection */
-    if (!(listen_conn = conn_new(l_socket, conn_listening, EV_READ | EV_PERSIST, 1, 0))) {
+    if (!(listen_conn = conn_new(l_socket, conn_listening,
+                                 EV_READ | EV_PERSIST, 1, 0, main_base))) {
         fprintf(stderr, "failed to create listening connection");
-        exit(1);
-    }
-    /* create the initial listening udp connection */
-    if (u_socket > -1 &&
-        !(u_conn = conn_new(u_socket, conn_read, EV_READ | EV_PERSIST, UDP_READ_BUFFER_SIZE, 1))) {
-        fprintf(stderr, "failed to create udp connection");
         exit(1);
     }
     /* initialise clock event */
@@ -2495,8 +2497,15 @@ int main (int argc, char **argv) {
     /* save the PID in if we're a daemon */
     if (daemonize)
         save_pid(getpid(),pid_file);
+    /* create the initial listening udp connection */
+    if (u_socket > -1 &&
+        !(u_conn = conn_new(u_socket, conn_read, EV_READ | EV_PERSIST,
+                            UDP_READ_BUFFER_SIZE, 1, main_base))) {
+        fprintf(stderr, "failed to create udp connection");
+        exit(1);
+    }
     /* enter the loop */
-    event_loop(0);
+    event_base_loop(main_base, 0);
     /* remove the PID file if we're a daemon */
     if (daemonize)
         remove_pidfile(pid_file);

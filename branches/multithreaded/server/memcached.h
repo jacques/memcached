@@ -242,7 +242,7 @@ int slabs_newslab(unsigned int id);
 void event_handler(int fd, short which, void *arg);
 conn *conn_from_freelist();
 int conn_add_to_freelist(conn *c);
-conn *conn_new(int sfd, int init_state, int event_flags, int read_buffer_size, int is_udp);
+conn *conn_new(int sfd, int init_state, int event_flags, int read_buffer_size, int is_udp, struct event_base *event_base);
 void conn_close(conn *c);
 void conn_init(void);
 void accept_new_conns(int do_accept);
