@@ -82,10 +82,8 @@ __inline size_t read(int s, void *buf, size_t len)
 	return ret;
 }
 
-#define MAXPACKETSIZE (1500-28)
 __inline int sendmsg(int s, const struct msghdr *msg, int flags)
 {
-/*
 	DWORD dwBufferCount;
 	int error = WSASendTo((SOCKET) s,
 		msg->msg_iov,
@@ -108,40 +106,6 @@ __inline int sendmsg(int s, const struct msghdr *msg, int flags)
 		}
 	}
 	return dwBufferCount;
-
-/*/
-	int ret;
-	char *cp, *ep;
-	char wrkbuf[MAXPACKETSIZE];
-
-	int len = msg->msg_iovlen;
-	struct iovec *iov = msg->msg_iov;
-	for(cp = wrkbuf, ep = wrkbuf + MAXPACKETSIZE; len-- > 0; iov++) {
-		char *pp = iov->iov_base;
-		int plen = iov->iov_len;
-		int clen = (ep - cp);
-		while(plen > clen) {
-			if(cp - wrkbuf) {
-				memcpy(cp, pp, clen);
-				ret = send(s, wrkbuf, MAXPACKETSIZE, flags);
-				pp += clen;
-				plen -= clen;
-				cp = wrkbuf;
-				clen = (ep - cp);
-			} else {
-				ret = send(s, pp, clen, flags);
-				pp += clen;
-				plen -= clen;
-			}
-			if(ret == -1 && WSAGetLastError() != WSAECONNRESET) return -1;
-		}
-		memcpy(cp, pp, plen);
-		cp += plen;
-	}
-	ret = send(s, wrkbuf, (cp - wrkbuf), flags);
-	if(ret == -1 && WSAGetLastError() == WSAECONNRESET) return 0;
-	return ret;
-/**/
 }
 
 #endif
