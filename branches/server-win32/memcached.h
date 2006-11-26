@@ -71,13 +71,13 @@ extern struct settings settings;
 typedef struct _stritem {
     struct _stritem *next;
     struct _stritem *prev;
-    struct _stritem *h_next;  /* hash chain next */
+    struct _stritem *h_next;    /* hash chain next */
     rel_time_t      time;       /* least recent access */
     rel_time_t      exptime;    /* expire time */
     int             nbytes;     /* size of data */
-    unsigned short  refcount; 
+    unsigned short  refcount;
     unsigned char   nsuffix;    /* length of flags-and-length string */
-    unsigned char it_flags;     /* ITEM_* above */
+    unsigned char   it_flags;   /* ITEM_* above */
     unsigned char   slabs_clsid;/* which slab class we're in */
     unsigned char   nkey;       /* key length, w/terminating null and padding */
     void * end[0];
@@ -122,18 +122,18 @@ typedef struct {
     char   *wbuf;
     char   *wcurr;
     int    wsize;
-    int    wbytes; 
+    int    wbytes;
     int    write_and_go; /* which state to go into after finishing current write */
     void   *write_and_free; /* free this memory after finishing writing */
 
     char   *ritem;  /* when we read in an item's value, it goes here */
     int    rlbytes;
-    
+
     /* data for the nread state */
 
-    /* 
+    /*
      * item is used to hold an item structure created after reading the command
-     * line of set/add/replace commands, but before we finished reading the actual 
+     * line of set/add/replace commands, but before we finished reading the actual
      * data. The data is read into ITEM_data(item) to avoid extra copying.
      */
 
@@ -193,9 +193,9 @@ extern volatile rel_time_t current_time;
  * Functions
  */
 
-/* 
+/*
  * given time value that's either unix time or delta from current unix time, return
- * unix time. Use the fact that delta can't exceed one month (and real time value can't 
+ * unix time. Use the fact that delta can't exceed one month (and real time value can't
  * be that low).
  */
 
@@ -225,7 +225,7 @@ void *slabs_alloc(size_t size);
 
 /* Free previously allocated object */
 void slabs_free(void *ptr, size_t size);
-    
+
 /* Fill buffer with stats */
 char* slabs_stats(int *buflen);
 
@@ -234,7 +234,7 @@ char* slabs_stats(int *buflen);
    0 = fail
    -1 = tried. busy. send again shortly. */
 int slabs_reassign(unsigned char srcid, unsigned char dstid);
-    
+
 /* event handling, network IO */
 void event_handler(int fd, short which, void *arg);
 conn *conn_new(int sfd, int init_state, int event_flags, int read_buffer_size, int is_udp);

@@ -268,7 +268,7 @@ decr <key> <value>\r\n
 - <value> is the amount by which the client wants to increase/decrease
 the item. It is a decimal representation of a 32-bit unsigned integer.
 
-The response will be one of: 
+The response will be one of:
 
 - "NOT_FOUND\r\n" to indicate the item with this value was not found
 

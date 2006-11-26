@@ -2,7 +2,7 @@
 #
 # This is hacky, because there are so many damn versions
 # of autoconf/automake.  It works with Debian woody, at least.
-# 
+#
 # Debian sarge:
 #    apt-get install automake1.7 autoconf
 #

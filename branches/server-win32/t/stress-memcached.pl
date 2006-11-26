@@ -47,16 +47,16 @@ sub stress {
 
     my ($t1, $t2);
     my $start = sub { $t1 = time(); };
-    my $stop = sub { 
+    my $stop = sub {
         my $op = shift;
-        $t2 = time(); 
+        $t2 = time();
         my $td = sprintf("%0.3f", $t2 - $t1);
         if ($td > 0.25) { print "Took $td seconds for: $op\n"; }
     };
 
     my $max = rand(50);
     my $sets = 0;
-    
+
     for (my $i = 0; $i < $max; $i++) {
         my $key = key($i);
         my $set = $memc->set($key, $key);
@@ -94,7 +94,7 @@ sub stress {
 }
 
 sub key {
-    my $n = shift; 
+    my $n = shift;
     $_ = sprintf("%04d", $n);
     if ($n % 2) { $_ .= "a"x20; }
     $_;

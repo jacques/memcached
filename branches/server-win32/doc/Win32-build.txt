@@ -1,7 +1,7 @@
 Compilation using Visual Studio 8:
 
 1) build libevent-1.1b as a Static Library after fixing some issues:
-  To build libevent you can use the Win32-libevent-1.1b.diff patch or:
+  To build libevent you need:
 	a) You'll have to create the project files, as the ones provided in the project won't work
 	b) in the file signal-test.c:
 	   atound line 35, it says __func__, change to __FUNCTION__

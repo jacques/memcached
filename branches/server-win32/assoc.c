@@ -4,8 +4,8 @@
  *
  * The hash function used here is by Bob Jenkins, 1996:
  *    <http://burtleburtle.net/bob/hash/doobs.html>
- *       "By Bob Jenkins, 1996.  bob_jenkins@burtleburtle.net.  
- *       You may use this code any way you wish, private, educational, 
+ *       "By Bob Jenkins, 1996.  bob_jenkins@burtleburtle.net.
+ *       You may use this code any way you wish, private, educational,
  *       or commercial.  It's free."
  *
  * The rest of the file is licensed under the BSD license.  See LICENSE.
@@ -194,7 +194,7 @@ uint32_t hash(
      * does it on word boundaries, so is OK with this.  But VALGRIND will
      * still catch it and complain.  The masking trick does make the hash
      * noticably faster for short strings (like English words).
-*/
+     */
 #ifndef VALGRIND
 
     switch(length)
@@ -254,7 +254,7 @@ uint32_t hash(
     /*----------------------------- handle the last (probably partial) block */
     k8 = (const uint8_t *)k;
     switch(length)
-{
+    {
     case 12: c+=k[4]+(((uint32_t)k[5])<<16);
              b+=k[2]+(((uint32_t)k[3])<<16);
              a+=k[0]+(((uint32_t)k[1])<<16);
@@ -288,7 +288,7 @@ uint32_t hash(
 
     /*--------------- all but the last block: affect some 32 bits of (a,b,c) */
     while (length > 12)
-        {
+    {
       a += k[0];
       a += ((uint32_t)k[1])<<8;
       a += ((uint32_t)k[2])<<16;
@@ -301,14 +301,14 @@ uint32_t hash(
       c += ((uint32_t)k[9])<<8;
       c += ((uint32_t)k[10])<<16;
       c += ((uint32_t)k[11])<<24;
-            mix(a,b,c);
+      mix(a,b,c);
       length -= 12;
       k += 12;
-        }
+    }
 
     /*-------------------------------- last block: affect all 32 bits of (c) */
     switch(length)                   /* all the case statements fall through */
-        {
+    {
     case 12: c+=((uint32_t)k[11])<<24;
     case 11: c+=((uint32_t)k[10])<<16;
     case 10: c+=((uint32_t)k[9])<<8;
@@ -316,15 +316,15 @@ uint32_t hash(
     case 8 : b+=((uint32_t)k[7])<<24;
     case 7 : b+=((uint32_t)k[6])<<16;
     case 6 : b+=((uint32_t)k[5])<<8;
-        case 5 : b+=k[4];
+    case 5 : b+=k[4];
     case 4 : a+=((uint32_t)k[3])<<24;
     case 3 : a+=((uint32_t)k[2])<<16;
     case 2 : a+=((uint32_t)k[1])<<8;
-        case 1 : a+=k[0];
+    case 1 : a+=k[0];
              break;
     case 0 : return c;  /* zero length strings require no mixing */
     }
-        }
+  }
 
   final(a,b,c);
   return c;             /* zero length strings require no mixing */
@@ -432,7 +432,7 @@ uint32_t hash( const void *key, size_t length, uint32_t initval)
       c += ((uint32_t)k[9])<<16;
       c += ((uint32_t)k[10])<<8;
       c += ((uint32_t)k[11]);
-    mix(a,b,c);
+      mix(a,b,c);
       length -= 12;
       k += 12;
     }
@@ -458,7 +458,7 @@ uint32_t hash( const void *key, size_t length, uint32_t initval)
   }
 
   final(a,b,c);
-    return c;
+  return c;
 }
 #else // HASH_XXX_ENDIAN == 1
 #error Must define HASH_BIG_ENDIAN or HASH_LITTLE_ENDIAN 
@@ -479,7 +479,7 @@ void assoc_init(void) {
 item *assoc_find(char *key) {
     ub4 hv = hash(key, strlen(key), 0) & hashmask(HASHPOWER);
     item *it = hashtable[hv];
-    
+
     while (it) {
         if (strcmp(key, ITEM_key(it)) == 0)
             return it;
@@ -519,7 +519,7 @@ void assoc_delete(char *key) {
         *before = nxt;
         return;
     }
-    /* Note:  we never actually get here.  the callers don't delete things 
+    /* Note:  we never actually get here.  the callers don't delete things
        they can't find. */
     assert(*before != 0);
 }

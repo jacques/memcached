@@ -14,7 +14,7 @@ AC_ARG_WITH(libevent,
        [
                 if test "x$withval" != "xno" ; then
                         trylibeventdir=$withval
-fi
+                fi
        ]
 )
 

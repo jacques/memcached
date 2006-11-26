@@ -19,9 +19,9 @@ is(scalar <$sock>, "OK\r\n", "did flush_all");
 mem_get_is($sock, "foo", undef);
 
 # check that flush_all doesn't blow away items that immediately get set
-    print $sock "set foo 0 0 3\r\nnew\r\n";
-    is(scalar <$sock>, "STORED\r\n", "stored foo = 'new'");
-    mem_get_is($sock, "foo", 'new');
+print $sock "set foo 0 0 3\r\nnew\r\n";
+is(scalar <$sock>, "STORED\r\n", "stored foo = 'new'");
+mem_get_is($sock, "foo", 'new');
 
 # and the other form, specifying a flush_all time...
 my $expire = time() + 2;

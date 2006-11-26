@@ -63,7 +63,7 @@ item *item_alloc(char *key, int flags, rel_time_t exptime, int nbytes) {
     char suffix[40];
 
     ntotal = item_make_header(key, flags, nbytes, suffix, &nsuffix, &len);
-    
+
     id = slabs_clsid(ntotal);
     if (id == 0)
         return 0;
@@ -79,8 +79,8 @@ item *item_alloc(char *key, int flags, rel_time_t exptime, int nbytes) {
 
         if (!settings.evict_to_free) return 0;
 
-        /* 
-         * try to get one off the right LRU 
+        /*
+         * try to get one off the right LRU
          * don't necessariuly unlink the tail because it may be locked: refcount>0
          * search up from tail an item with refcount==0 and unlink it; give up after 50
          * tries
@@ -122,7 +122,7 @@ void item_free(item *it) {
     assert((it->it_flags & ITEM_LINKED) == 0);
     assert(it != heads[it->slabs_clsid]);
     assert(it != tails[it->slabs_clsid]);
-    assert(it->refcount == 0);    
+    assert(it->refcount == 0);
 
     /* so slab size changer can tell later if item is already free or not */
     it->slabs_clsid = 0;
@@ -165,7 +165,7 @@ void item_unlink_q(item *it) {
     /* always true, warns: assert(it->slabs_clsid <= LARGEST_ID); */
     head = &heads[it->slabs_clsid];
     tail = &tails[it->slabs_clsid];
-    
+
     if (*head == it) {
         assert(it->prev == 0);
         *head = it->next;
@@ -235,7 +235,7 @@ int item_replace(item *it, item *new_it) {
 }
 
 char *item_cachedump(unsigned int slabs_clsid, unsigned int limit, unsigned int *bytes) {
-    
+
     int memlimit = 2*1024*1024;
     char *buffer;
     int bufcurr;
@@ -243,7 +243,7 @@ char *item_cachedump(unsigned int slabs_clsid, unsigned int limit, unsigned int 
     int len;
     int shown = 0;
     char temp[512];
-    
+
     if (slabs_clsid > LARGEST_ID) return 0;
     it = heads[slabs_clsid];
 
@@ -263,7 +263,7 @@ char *item_cachedump(unsigned int slabs_clsid, unsigned int limit, unsigned int 
 
     strcpy(buffer+bufcurr, "END\r\n");
     bufcurr+=5;
-    
+
     *bytes = bufcurr;
     return buffer;
 }
@@ -280,7 +280,7 @@ void item_stats(char *buffer, int buflen) {
 
     for (i=0; i<LARGEST_ID; i++) {
         if (tails[i])
-            bufcurr += sprintf(bufcurr, "STAT items:%u:number %u\r\nSTAT items:%u:age %lu\r\n", 
+            bufcurr += sprintf(bufcurr, "STAT items:%u:number %u\r\nSTAT items:%u:age %lu\r\n",
                                i, sizes[i], i, now - tails[i]->time);
     }
     strcpy(bufcurr, "END");

@@ -59,7 +59,10 @@
 #include <limits.h>
 
 #ifdef HAVE_MALLOC_H
+/* OpenBSD has a malloc.h, but warns to use stdlib.h instead */
+#ifndef __OpenBSD__
 #include <malloc.h>
+#endif
 #endif
 
 /* FreeBSD 4.x doesn't have IOV_MAX exposed. */
@@ -82,6 +85,16 @@ static int deltotal;
 #define TRANSMIT_INCOMPLETE 1
 #define TRANSMIT_SOFT_ERROR 2
 #define TRANSMIT_HARD_ERROR 3
+
+enum daemon_mode {
+    daemon_run = 1,     /* run the daemon */
+    daemon_start,       /* start the daemon (win32 only) */
+    daemon_restart,     /* restart the daemon (win32 only) */
+    daemon_stop,        /* stop the daemon execution (win32 only) */
+    daemon_shutdown,    /* shutdown the daemon service (win32 only) */
+    daemon_install,     /* install as a service (win32 only) */
+    daemon_uninstall    /* uninstall as a service (win32 only) */
+};
 
 int *buckets = 0; /* bucket->generation array for a managed instance */
 
@@ -278,7 +291,7 @@ conn *conn_new(int sfd, int init_state, int event_flags, int read_buffer_size,
     c->wcurr = c->wbuf;
     c->rcurr = c->rbuf;
     c->ritem = 0;
-    c->icurr = c->ilist; 
+    c->icurr = c->ilist;
     c->ileft = 0;
     c->iovused = 0;
     c->msgcurr = 0;
@@ -368,7 +381,7 @@ void conn_close(conn *c) {
     if (c->rsize > READ_BUFFER_HIGHWAT) {
         conn_free(c);
     } else if (freecurr < freetotal) {
-    /* if we have enough space in the free connections array, put the structure there */
+        /* if we have enough space in the free connections array, put the structure there */
         freeconns[freecurr++] = c;
     } else {
         /* try to enlarge free connections array */
@@ -587,7 +600,7 @@ void out_string(conn *c, char *str) {
     return;
 }
 
-/* 
+/*
  * we get here after reading the value in set/add/replace commands. The command
  * has been stored in c->item_comm, and the item is ready in c->item.
  */
@@ -640,11 +653,11 @@ void complete_nread(conn *c) {
     c->item = 0;
     out_string(c, "STORED");
     return;
-            
+
 err:
-    item_free(it); 
-    c->item = 0; 
-    return;
+     item_free(it);
+     c->item = 0;
+     return;
 }
 
 void process_stat(conn *c, char *command) {
@@ -729,7 +742,7 @@ void process_stat(conn *c, char *command) {
             out_string(c, "SERVER_ERROR out of memory");
             return;
         }
-            
+
         fd = open("/proc/self/maps", O_RDONLY);
         if (fd == -1) {
             out_string(c, "SERVER_ERROR cannot open the maps file");
@@ -824,14 +837,14 @@ void process_stat(conn *c, char *command) {
 }
 
 void process_command(conn *c, char *command) {
-    
+
     int comm = 0;
     int incr = 0;
 
-    /* 
+    /*
      * for commands set/add/replace, we build an item and read the data
      * directly into it, then continue in nread_complete().
-     */ 
+     */
 
     if (settings.verbose > 1)
         fprintf(stderr, "<%d %s\n", c->sfd, command);
@@ -844,7 +857,7 @@ void process_command(conn *c, char *command) {
         return;
     }
 
-    if ((strncmp(command, "add ", 4) == 0 && (comm = NREAD_ADD)) || 
+    if ((strncmp(command, "add ", 4) == 0 && (comm = NREAD_ADD)) ||
         (strncmp(command, "set ", 4) == 0 && (comm = NREAD_SET)) ||
         (strncmp(command, "replace ", 8) == 0 && (comm = NREAD_REPLACE))) {
 
@@ -882,7 +895,7 @@ void process_command(conn *c, char *command) {
             if (! item_size_ok(key, flags, len + 2))
                 out_string(c, "SERVER_ERROR object too large for cache");
             else
-            out_string(c, "SERVER_ERROR out of memory");
+                out_string(c, "SERVER_ERROR out of memory");
             /* swallow the data line */
             c->write_and_go = conn_swallow;
             c->sbytes = len+2;
@@ -956,7 +969,7 @@ void process_command(conn *c, char *command) {
         out_string(c, temp);
         return;
     }
-        
+
     if (strncmp(command, "bget ", 5) == 0) {
         c->binary = 1;
         goto get;
@@ -1038,7 +1051,7 @@ void process_command(conn *c, char *command) {
             conn_set_state(c, conn_mwrite);
             c->msgcurr = 0;
         }
-            return;
+        return;
     }
 
     if (strncmp(command, "delete ", 7) == 0) {
@@ -1077,8 +1090,8 @@ void process_command(conn *c, char *command) {
             if (new_delete) {
                 todelete = new_delete;
                 deltotal *= 2;
-            } else { 
-                /* 
+            } else {
+                /*
                  * can't delete it immediately, user wants a delay,
                  * but we ran out of memory for the delete queue
                  */
@@ -1086,7 +1099,7 @@ void process_command(conn *c, char *command) {
                 return;
             }
         }
-            
+
         it->refcount++;
         /* use its expiration time as its deletion time now */
         it->exptime = realtime(exptime);
@@ -1227,12 +1240,12 @@ void process_command(conn *c, char *command) {
 #endif
         return;
     }
-    
+
     out_string(c, "ERROR");
     return;
 }
 
-/* 
+/*
  * if we have a complete line in the buffer, process it.
  */
 int try_read_command(conn *c) {
@@ -1293,7 +1306,7 @@ int try_read_udp(conn *c) {
 
 /*
  * read from network as much as we can, handle buffer overflow and connection
- * close. 
+ * close.
  * before reading, move the remaining incomplete fragment of a command
  * (if any) to the beginning of the buffer.
  * return 0 if there's nothing to read on the first read.
@@ -1361,7 +1374,7 @@ int update_event(conn *c, int new_flags) {
     if (event_add(&c->event, 0) == -1) return 0;
     return 1;
 }
-    
+
 /*
  * Transmit the next chunk of data from our list of msgbuf structures.
  *
@@ -1452,7 +1465,7 @@ void drive_machine(conn *c) {
                 perror("setting O_NONBLOCK");
                 close(sfd);
                 break;
-            }            
+            }
             newc = conn_new(sfd, conn_read, EV_READ | EV_PERSIST,
                             DATA_BUFFER_SIZE, 0);
             if (!newc) {
@@ -1512,7 +1525,7 @@ void drive_machine(conn *c) {
             }
             if (res == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
                 if (!update_event(c, EV_READ | EV_PERSIST)) {
-                    if (settings.verbose > 0) 
+                    if (settings.verbose > 0)
                         fprintf(stderr, "Couldn't update event\n");
                     conn_set_state(c, conn_closing);
                     break;
@@ -1570,7 +1583,7 @@ void drive_machine(conn *c) {
             break;
 
         case conn_write:
-            /* 
+            /*
              * We want to write out a simple response. If we haven't already,
              * assemble it into a msgbuf list (this will be a single-entry
              * list for TCP or a two-entry list for UDP).
@@ -1578,12 +1591,12 @@ void drive_machine(conn *c) {
             if (c->iovused == 0 || (c->udp && c->iovused == 1)) {
                 if (add_iov(c, c->wcurr, c->wbytes) ||
                         c->udp && build_udp_headers(c)) {
-                        if (settings.verbose > 0)
+                    if (settings.verbose > 0)
                         fprintf(stderr, "Couldn't build response\n");
                     conn_set_state(c, conn_closing);
-                        break;
-                    }
+                    break;
                 }
+            }
 
             /* fall through... */
 
@@ -1593,10 +1606,10 @@ void drive_machine(conn *c) {
                 if (c->state == conn_mwrite) {
                     while (c->ileft > 0) {
                         item *it = *(c->icurr);
-                    assert((it->it_flags & ITEM_SLABBED) == 0);
-                    item_remove(it);
+                        assert((it->it_flags & ITEM_SLABBED) == 0);
+                        item_remove(it);
                         c->icurr++;
-                    c->ileft--;
+                        c->ileft--;
                     }
                     conn_set_state(c, conn_read);
                 } else if (c->state == conn_write) {
@@ -1605,12 +1618,12 @@ void drive_machine(conn *c) {
                         c->write_and_free = 0;
                     }
                     conn_set_state(c, c->write_and_go);
-                    } else {
+                } else {
                     if (settings.verbose > 0)
                         fprintf(stderr, "Unexpected state %d\n", c->state);
                     conn_set_state(c, conn_closing);
-                    }
-                    break;
+                }
+                break;
 
             case TRANSMIT_INCOMPLETE:
             case TRANSMIT_HARD_ERROR:
@@ -1618,15 +1631,15 @@ void drive_machine(conn *c) {
 
             case TRANSMIT_SOFT_ERROR:
                 stop = 1;
-                    break;
-                }
+                break;
+            }
             break;
 
         case conn_closing:
             if (c->udp)
                 conn_cleanup(c);
             else
-            conn_close(c);
+                conn_close(c);
             stop = 1;
             break;
         }
@@ -1638,7 +1651,7 @@ void drive_machine(conn *c) {
 
 void event_handler(int fd, short which, void *arg) {
     conn *c;
-    
+
     c = (conn *)arg;
     c->which = which;
 
@@ -1730,7 +1743,7 @@ int server_socket(int port, int is_udp) {
         setsockopt(sfd, IPPROTO_TCP, TCP_NODELAY, (void *)&flags, sizeof(flags));
     }
 
-    /* 
+    /*
      * the memset call clears nonstandard fields in some impementations
      * that otherwise mess things up.
      */
@@ -1901,13 +1914,13 @@ void delete_handler(int fd, short which, void *arg) {
         delcurr = j;
     }
 }
-        
+
 void usage(void) {
     printf(PACKAGE " " VERSION "\n");
     printf("-p <num>      TCP port number to listen on (default: 11211)\n");
     printf("-U <num>      UDP port number to listen on (default: 0, off)\n");
     printf("-s <file>     unix socket path to listen on (disables network support)\n");
-    printf("-l <ip_addr>      interface to listen on, default is INDRR_ANY\n");
+    printf("-l <ip_addr>  interface to listen on, default is INDRR_ANY\n");
 #ifdef WIN32
     printf("-d start          tell memcached to start\n");
     printf("-d restart        tell running memcached to do a graceful restart\n");
@@ -1915,20 +1928,20 @@ void usage(void) {
     printf("-d install        install memcached service\n");
     printf("-d uninstall      uninstall memcached service\n");
 #else
-    printf("-d                run as a daemon\n");
+    printf("-d            run as a daemon\n");
 #endif
-    printf("-r                maximize core file limit\n");
-    printf("-u <username>     assume identity of <username> (only when run as root)\n");
-    printf("-m <num>          max memory to use for items in megabytes, default is 64 MB\n");
-    printf("-M                return error on memory exhausted (rather than removing items)\n");
-    printf("-c <num>          max simultaneous connections, default is 1024\n");
-    printf("-k                lock down all paged memory\n");
-    printf("-v                verbose (print errors/warnings while in event loop)\n");
-    printf("-vv               very verbose (also print client commands/reponses)\n");
-    printf("-h                print this help and exit\n");
-    printf("-i                print memcached and libevent license\n");
-    printf("-b                run a managed instanced (mnemonic: buckets)\n");
-    printf("-P <file>         save PID in <file>, only used with -d option\n");
+    printf("-r            maximize core file limit\n");
+    printf("-u <username> assume identity of <username> (only when run as root)\n");
+    printf("-m <num>      max memory to use for items in megabytes, default is 64 MB\n");
+    printf("-M            return error on memory exhausted (rather than removing items)\n");
+    printf("-c <num>      max simultaneous connections, default is 1024\n");
+    printf("-k            lock down all paged memory\n");
+    printf("-v            verbose (print errors/warnings while in event loop)\n");
+    printf("-vv           very verbose (also print client commands/reponses)\n");
+    printf("-h            print this help and exit\n");
+    printf("-i            print memcached and libevent license\n");
+    printf("-b            run a managed instanced (mnemonic: buckets)\n");
+    printf("-P <file>     save PID in <file>, only used with -d option\n");
     printf("-f <factor>   chunk size growth factor, default 1.25\n");
     printf("-n <bytes>    minimum space allocated for key+value+flags, default 48\n");
     return;
@@ -1937,69 +1950,69 @@ void usage(void) {
 void usage_license(void) {
     printf(PACKAGE " " VERSION "\n\n");
     printf(
-	"Copyright (c) 2003, Danga Interactive, Inc. <http://www.danga.com/>\n"
-	"All rights reserved.\n"
-	"\n"
-	"Redistribution and use in source and binary forms, with or without\n"
-	"modification, are permitted provided that the following conditions are\n"
-	"met:\n"
-	"\n"
-	"    * Redistributions of source code must retain the above copyright\n"
-	"notice, this list of conditions and the following disclaimer.\n"
-	"\n"
-	"    * Redistributions in binary form must reproduce the above\n"
-	"copyright notice, this list of conditions and the following disclaimer\n"
-	"in the documentation and/or other materials provided with the\n"
-	"distribution.\n"
-	"\n"
-	"    * Neither the name of the Danga Interactive nor the names of its\n"
-	"contributors may be used to endorse or promote products derived from\n"
-	"this software without specific prior written permission.\n"
-	"\n"
-	"THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-	"\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
-	"LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
-	"A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
-	"OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
-	"SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
-	"LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-	"DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-	"THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-	"(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-	"OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
-	"\n"
-	"\n"
-	"This product includes software developed by Niels Provos.\n"
-	"\n"
-	"[ libevent ]\n"
-	"\n"
-	"Copyright 2000-2003 Niels Provos <provos@citi.umich.edu>\n"
-	"All rights reserved.\n"
-	"\n"
-	"Redistribution and use in source and binary forms, with or without\n"
-	"modification, are permitted provided that the following conditions\n"
-	"are met:\n"
-	"1. Redistributions of source code must retain the above copyright\n"
-	"   notice, this list of conditions and the following disclaimer.\n"
-	"2. Redistributions in binary form must reproduce the above copyright\n"
-	"   notice, this list of conditions and the following disclaimer in the\n"
-	"   documentation and/or other materials provided with the distribution.\n"
-	"3. All advertising materials mentioning features or use of this software\n"
-	"   must display the following acknowledgement:\n"
-	"      This product includes software developed by Niels Provos.\n"
-	"4. The name of the author may not be used to endorse or promote products\n"
-	"   derived from this software without specific prior written permission.\n"
-	"\n"
-	"THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR\n"
-	"IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES\n"
-	"OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.\n"
-	"IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,\n"
-	"INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT\n"
-	"NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-	"DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-	"THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-	"(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF\n"
-	"THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+    "Copyright (c) 2003, Danga Interactive, Inc. <http://www.danga.com/>\n"
+    "All rights reserved.\n"
+    "\n"
+    "Redistribution and use in source and binary forms, with or without\n"
+    "modification, are permitted provided that the following conditions are\n"
+    "met:\n"
+    "\n"
+    "    * Redistributions of source code must retain the above copyright\n"
+    "notice, this list of conditions and the following disclaimer.\n"
+    "\n"
+    "    * Redistributions in binary form must reproduce the above\n"
+    "copyright notice, this list of conditions and the following disclaimer\n"
+    "in the documentation and/or other materials provided with the\n"
+    "distribution.\n"
+    "\n"
+    "    * Neither the name of the Danga Interactive nor the names of its\n"
+    "contributors may be used to endorse or promote products derived from\n"
+    "this software without specific prior written permission.\n"
+    "\n"
+    "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
+    "\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
+    "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
+    "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
+    "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
+    "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
+    "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
+    "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
+    "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
+    "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
+    "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+    "\n"
+    "\n"
+    "This product includes software developed by Niels Provos.\n"
+    "\n"
+    "[ libevent ]\n"
+    "\n"
+    "Copyright 2000-2003 Niels Provos <provos@citi.umich.edu>\n"
+    "All rights reserved.\n"
+    "\n"
+    "Redistribution and use in source and binary forms, with or without\n"
+    "modification, are permitted provided that the following conditions\n"
+    "are met:\n"
+    "1. Redistributions of source code must retain the above copyright\n"
+    "   notice, this list of conditions and the following disclaimer.\n"
+    "2. Redistributions in binary form must reproduce the above copyright\n"
+    "   notice, this list of conditions and the following disclaimer in the\n"
+    "   documentation and/or other materials provided with the distribution.\n"
+    "3. All advertising materials mentioning features or use of this software\n"
+    "   must display the following acknowledgement:\n"
+    "      This product includes software developed by Niels Provos.\n"
+    "4. The name of the author may not be used to endorse or promote products\n"
+    "   derived from this software without specific prior written permission.\n"
+    "\n"
+    "THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR\n"
+    "IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES\n"
+    "OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.\n"
+    "IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,\n"
+    "INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT\n"
+    "NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
+    "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
+    "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
+    "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF\n"
+    "THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
 #ifdef WIN32
 	"This product includes software developed by the NetBSD\n"
 	"Foundation, Inc. and its contributors.\n"
@@ -2106,23 +2119,23 @@ void remove_pidfile(char *pid_file) {
 
 }
 
-void runServer()
+void run_server()
 {
     /* enter the loop */
     event_loop(0);
 }
 
-void stopServer()
+void stop_server()
 {
     /* exit the loop */
     event_loopexit(NULL);
 }
-void pauseServer()
+void pause_server()
 {
     /* not implemented yet */
 }
 
-void continueServer()
+void continue_server()
 {
     /* not implemented yet */
 }
@@ -2216,15 +2229,15 @@ int main (int argc, char **argv) {
             }
             break;
         case 'd':
-            daemonize = 1;
+            daemonize = daemon_run;
 #ifdef WIN32
-            if(!optarg || !strcmpi(optarg, "runservice")) daemonize = 1;
-            else if(!strcmpi(optarg, "start")) daemonize = 2;
-            else if(!strcmpi(optarg, "restart")) daemonize = 3;
-            else if(!strcmpi(optarg, "stop")) daemonize = 4;
-            else if(!strcmpi(optarg, "shutdown")) daemonize = 5;
-            else if(!strcmpi(optarg, "install")) daemonize = 6;
-            else if(!strcmpi(optarg, "uninstall")) daemonize = 7;
+            if(!optarg || !strcmpi(optarg, "runservice")) daemonize = daemon_run;
+            else if(!strcmpi(optarg, "start")) daemonize = daemon_start;
+            else if(!strcmpi(optarg, "restart")) daemonize = daemon_restart;
+            else if(!strcmpi(optarg, "stop")) daemonize = daemon_stop;
+            else if(!strcmpi(optarg, "shutdown")) daemonize = daemon_shutdown;
+            else if(!strcmpi(optarg, "install")) daemonize = daemon_install;
+            else if(!strcmpi(optarg, "uninstall")) daemonize = daemon_uninstall;
             else fprintf(stderr, "Illegal argument: \"%s\"\n", optarg);
 #endif
             break;
@@ -2260,42 +2273,42 @@ int main (int argc, char **argv) {
 #ifndef WIN32
     if (maxcore) {
         struct rlimit rlim_new;
-        /* 
+        /*
          * First try raising to infinity; if that fails, try bringing
-         * the soft limit to the hard. 
+         * the soft limit to the hard.
          */
         if (getrlimit(RLIMIT_CORE, &rlim)==0) {
             rlim_new.rlim_cur = rlim_new.rlim_max = RLIM_INFINITY;
             if (setrlimit(RLIMIT_CORE, &rlim_new)!=0) {
                 /* failed. try raising just to the old max */
-                rlim_new.rlim_cur = rlim_new.rlim_max = 
+                rlim_new.rlim_cur = rlim_new.rlim_max =
                     rlim.rlim_max;
                 (void) setrlimit(RLIMIT_CORE, &rlim_new);
             }
         }
-        /* 
-         * getrlimit again to see what we ended up with. Only fail if 
-         * the soft limit ends up 0, because then no core files will be 
+        /*
+         * getrlimit again to see what we ended up with. Only fail if
+         * the soft limit ends up 0, because then no core files will be
          * created at all.
          */
-           
+
         if ((getrlimit(RLIMIT_CORE, &rlim)!=0) || rlim.rlim_cur==0) {
             fprintf(stderr, "failed to ensure corefile creation\n");
             exit(1);
         }
     }
-                        
-    /* 
+
+    /*
      * If needed, increase rlimits to allow as many connections
      * as needed.
      */
-    
+
     if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) {
         fprintf(stderr, "failed to getrlimit number of files\n");
         exit(1);
     } else {
         int maxfiles = settings.maxconns;
-        if (rlim.rlim_cur < maxfiles) 
+        if (rlim.rlim_cur < maxfiles)
             rlim.rlim_cur = maxfiles + 3;
         if (rlim.rlim_max < rlim.rlim_cur)
             rlim.rlim_max = rlim.rlim_cur;
@@ -2306,7 +2319,7 @@ int main (int argc, char **argv) {
     }
 #endif
 
-    /* 
+    /*
      * initialization order: first create the listening sockets
      * (may need root on low ports), then drop root if needed,
      * then daemonise if needed, then init libevent (in some cases
@@ -2316,10 +2329,10 @@ int main (int argc, char **argv) {
     /* create the listening socket and bind it */
     if (!settings.socketpath) {
         l_socket = server_socket(settings.port, 0);
-    if (l_socket == -1) {
-        fprintf(stderr, "failed to listen\n");
-        exit(1);
-    }
+        if (l_socket == -1) {
+            fprintf(stderr, "failed to listen\n");
+            exit(1);
+        }
     }
 
     if (settings.udpport > 0 && ! settings.socketpath) {
@@ -2371,32 +2384,32 @@ int main (int argc, char **argv) {
     }
 #else
     switch(daemonize) {
-        case 2:
+        case daemon_start:
             if(!ServiceStart()) {
                 fprintf(stderr, "failed to start service\n");
                 return 1;
             }
             exit(0);
-        case 3:
+        case daemon_restart:
             if(!ServiceRestart()) {
                 fprintf(stderr, "failed to restart service\n");
                 return 1;
             }
             exit(0);
-        case 4:
-        case 5:
+        case daemon_stop:
+        case daemon_shutdown:
             if(!ServiceStop()) {
                 fprintf(stderr, "failed to stop service\n");
                 return 1;
             }
             exit(0);
-        case 6:
+        case daemon_install:
             if(!ServiceInstall()) {
                 fprintf(stderr, "failed to install service or service already installed\n");
                 return 1;
             }
             exit(0);
-        case 7:
+        case daemon_uninstall:
             if(!ServiceUninstall()) {
                 fprintf(stderr, "failed to uninstall service or service not installed\n");
                 return 1;
@@ -2442,7 +2455,7 @@ int main (int argc, char **argv) {
     if (sigemptyset(&sa.sa_mask) == -1 ||
         sigaction(SIGPIPE, &sa, 0) == -1) {
         perror("failed to ignore SIGPIPE; sigaction");
-        exit(1); 
+        exit(1);
     }
 #endif
     /* create the initial listening connection */
@@ -2471,7 +2484,7 @@ int main (int argc, char **argv) {
         ServiceRun();
     else
 #endif
-        runServer();
+    run_server();
 
     /* remove the PID file if we're a daemon */
     if (daemonize)

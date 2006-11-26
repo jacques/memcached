@@ -45,7 +45,7 @@ typedef struct {
     void **slots;           /* list of item ptrs */
     unsigned int sl_total;  /* size of previous array */
     unsigned int sl_curr;   /* first free slot */
- 
+
     void *end_page_ptr;         /* pointer to next free item at end of page, or 0 */
     unsigned int end_page_free; /* number of items remaining at end of last alloced page */
 
@@ -115,7 +115,7 @@ void slabs_init(size_t limit, double factor) {
         char *t_initial_malloc = getenv("T_MEMD_INITIAL_MALLOC");
         if (t_initial_malloc) {
             mem_malloced = atol(getenv("T_MEMD_INITIAL_MALLOC"));
-    }
+        }
 
     }
 
@@ -123,8 +123,8 @@ void slabs_init(size_t limit, double factor) {
     {
         char *pre_alloc = getenv("T_MEMD_SLABS_ALLOC");
         if (!pre_alloc || atoi(pre_alloc)) {
-    slabs_preallocate(limit / POWER_BLOCK);
-}
+            slabs_preallocate(limit / POWER_BLOCK);
+        }
     }
 #endif
 }
@@ -143,11 +143,11 @@ void slabs_preallocate (unsigned int maxslabs) {
         if (++prealloc > maxslabs)
             return;
         slabs_newslab(i);
-    } 
- 
+    }
+
 }
 
-static int grow_slab_list (unsigned int id) { 
+static int grow_slab_list (unsigned int id) {
     slabclass_t *p = &slabclass[id];
     if (p->slabs == p->list_size) {
         size_t new_size =  p->list_size ? p->list_size * 2 : 16;
@@ -172,7 +172,7 @@ int slabs_newslab(unsigned int id) {
         return 0;
 
     if (! grow_slab_list(id)) return 0;
-   
+
     ptr = malloc(len);
     if (ptr == 0) return 0;
 
@@ -201,7 +201,7 @@ void *slabs_alloc(size_t size) {
     mem_malloced += size;
     return malloc(size);
 #endif
-    
+
     /* fail unless we have space at the end of a recently allocated page,
        we have something on our freelist, or we could allocate a new page */
     if (! (p->end_page_ptr || p->sl_curr || slabs_newslab(id)))
@@ -305,7 +305,7 @@ int slabs_reassign(unsigned char srcid, unsigned char dstid) {
     if (srcid < POWER_SMALLEST || srcid > power_largest ||
         dstid < POWER_SMALLEST || dstid > power_largest)
         return 0;
-   
+
     p = &slabclass[srcid];
     dp = &slabclass[dstid];
 
@@ -316,12 +316,12 @@ int slabs_reassign(unsigned char srcid, unsigned char dstid) {
     /* fail if dst is still growing or we can't make room to hold its new one */
     if (dp->end_page_ptr || ! grow_slab_list(dstid))
         return 0;
-        
+
     if (p->killing == 0) p->killing = 1;
 
     slab = p->slab_list[p->killing-1];
     slab_end = (char*)slab + POWER_BLOCK;
-    
+
     for (iter=slab; iter<slab_end; (char*)iter+=p->size) {
         item *it = (item *) iter;
         if (it->slabs_clsid) {
@@ -329,7 +329,7 @@ int slabs_reassign(unsigned char srcid, unsigned char dstid) {
             item_unlink(it);
         }
     }
-    
+
     /* go through free list and discard items that are no longer part of this slab */
     {
         int fi;

@@ -35,10 +35,10 @@
 #include <stdio.h>
 
 /* Extern callbacks to manage the server */
-extern void runServer();
-extern void pauseServer();
-extern void continueServer();
-extern void stopServer();
+extern void run_server();
+extern void pause_server();
+extern void continue_server();
+extern void stop_server();
 
 SERVICE_STATUS serviceStatus;
 SERVICE_STATUS_HANDLE serviceStatusHandle = 0;
@@ -52,7 +52,7 @@ void WINAPI ServiceControlHandler(DWORD controlCode)
             serviceStatus.dwCurrentState = SERVICE_STOP_PENDING;
             SetServiceStatus(serviceStatusHandle, &serviceStatus);
 
-            stopServer();
+            stop_server();
             return;
 
         case SERVICE_CONTROL_PAUSE:
@@ -60,7 +60,7 @@ void WINAPI ServiceControlHandler(DWORD controlCode)
             serviceStatus.dwCurrentState = SERVICE_PAUSE_PENDING;
             SetServiceStatus(serviceStatusHandle, &serviceStatus);
 
-            pauseServer();
+            pause_server();
             break;
 
         case SERVICE_CONTROL_CONTINUE:
@@ -68,7 +68,7 @@ void WINAPI ServiceControlHandler(DWORD controlCode)
             serviceStatus.dwCurrentState = SERVICE_CONTINUE_PENDING;
             SetServiceStatus(serviceStatusHandle, &serviceStatus);
 
-            continueServer();
+            continue_server();
             break;
 
         case SERVICE_CONTROL_INTERROGATE:
@@ -102,7 +102,7 @@ void WINAPI ServiceMain(DWORD dwNumServicesArgs, LPSTR *lpServiceArgVectors)
         SetServiceStatus(serviceStatusHandle, &serviceStatus);
 
         /* execute the main code */
-        runServer();
+        run_server();
 
         /* set the service curent status as stopping */
         serviceStatus.dwCurrentState = SERVICE_STOP_PENDING;
