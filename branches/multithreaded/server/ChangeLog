@@ -1,3 +1,7 @@
+2007-03-01
+	* Steven Grimm <sgrimm@facebook.com>: Fix an off-by-one error in the
+	  multithreaded version's message passing code.
+
 2006-11-22
 	* Steven Grimm <sgrimm@facebook.com>: Add support for multithreaded
 	  execution. Run configure with "--enable-threads" to enable. See
