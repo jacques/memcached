@@ -1,3 +1,10 @@
+2007-03-05
+	* Steven Grimm <sgrimm@facebook.com>: Per-object-type stats collection
+	  support. Specify the object type delimiter with the -D command line
+	  option. Turn stats gathering on and off with "stats detail on" and
+	  "stats detail off". Dump the per-object-type details with
+	  "stats detail dump".
+
 2007-03-01
 	* Steven Grimm <sgrimm@facebook.com>: Fix an off-by-one error in the
 	  multithreaded version's message passing code.
