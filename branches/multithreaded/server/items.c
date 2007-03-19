@@ -33,8 +33,8 @@ static unsigned int sizes[LARGEST_ID];
 void item_init(void) {
     int i;
     for(i=0; i<LARGEST_ID; i++) {
-        heads[i]=0;
-        tails[i]=0;
+        heads[i]=NULL;
+        tails[i]=NULL;
         sizes[i]=0;
     }
 }
@@ -63,7 +63,7 @@ void item_init(void) {
  *
  * Returns the total size of the header.
  */
-static size_t item_make_header(char *key, const uint8_t nkey, const int flags, const int nbytes,
+static size_t item_make_header(const uint8_t nkey, const int flags, const int nbytes,
                      char *suffix, uint8_t *nsuffix) {
     /* suffix is defined at 40 chars elsewhere.. */
     *nsuffix = (uint8_t) snprintf(suffix, 40, " %d %d\r\n", flags, nbytes - 2);
@@ -78,7 +78,7 @@ item *do_item_alloc(char *key, const size_t nkey, const int flags, const rel_tim
     unsigned int id;
     char suffix[40];
 
-    ntotal = item_make_header(key, nkey + 1, flags, nbytes, suffix, &nsuffix);
+    ntotal = item_make_header(nkey + 1, flags, nbytes, suffix, &nsuffix);
  
     id = slabs_clsid(ntotal);
     if (id == 0)
@@ -152,11 +152,11 @@ void item_free(item *it) {
  * Returns true if an item will fit in the cache (its size does not exceed
  * the maximum for a cache entry.)
  */
-bool item_size_ok(char *key, const size_t nkey, const int flags, const int nbytes) {
+bool item_size_ok(const size_t nkey, const int flags, const int nbytes) {
     char prefix[40];
     uint8_t nsuffix;
 
-    return slabs_clsid(item_make_header(key, nkey + 1, flags, nbytes,
+    return slabs_clsid(item_make_header(nkey + 1, flags, nbytes,
                                         prefix, &nsuffix)) != 0;
 }
 
@@ -407,7 +407,7 @@ item *do_item_get_nocheck(char *key, size_t nkey) {
 }
 
 /* expires items that are more recent than the oldest_live setting. */
-void do_item_flush_expired() {
+void do_item_flush_expired(void) {
     int i;
     item *iter, *next;
     if (settings.oldest_live == 0)

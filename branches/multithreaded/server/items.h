@@ -3,7 +3,7 @@ void item_init(void);
 /*@null@*/
 item *do_item_alloc(char *key, const size_t nkey, const int flags, const rel_time_t exptime, const int nbytes);
 void item_free(item *it);
-bool item_size_ok(char *key, const size_t nkey, const int flags, const int nbytes);
+bool item_size_ok(const size_t nkey, const int flags, const int nbytes);
 
 int  do_item_link(item *it);    /* may fail if transgresses limits */
 void do_item_unlink(item *it);

@@ -31,7 +31,7 @@
 #if HAVE_STDBOOL_H
 # include <stdbool.h>
 #else
-typedef enum {false = 0, true = 1} bool;
+  typedef enum {false = 0, true = 1} bool;
 #endif
 
 #if HAVE_STDINT_H
