@@ -112,5 +112,10 @@ externally fragmented and allocations are guaranteed O(1).</p>
 </ul>
 Additionally, all three support an expiration time.
 
+<h3>Need help?  Have Questions?</h3>
+<ul>
+<li>Join <a href="http://lists.danga.com/mailman/listinfo/memcached">the mailing list</a>!  We'd love to help you out.</li>
+</ul>
+
 <=body
 page?>
