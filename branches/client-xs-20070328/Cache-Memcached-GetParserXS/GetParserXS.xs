@@ -98,7 +98,7 @@ int parse_buffer (SV* selfref) {
   int key_len, barelen;
   int state, copy, new_p;
   char *barekey;
-  
+
   if (DEBUG)
     printf("get_buffer (nslen = %d)...\n", nslen);
 
@@ -108,33 +108,33 @@ int parse_buffer (SV* selfref) {
     p = buf;
 
     if (DEBUG) {
-	char first_line[1000];
-	int i;
-	char *end;
-	for (i = 0, end = buf; *end && *end != '\n' && i++ < 900; end++)
-	  ;
-	end += 10;
-	strncpy (first_line, buf, end - buf + 1);
-	first_line[end - buf + 1] = '\0';
-        printf("GOT buf (len=%d)\nFirst line: %s\n", len, first_line);
+      char first_line[1000];
+      int i;
+      char *end;
+      for (i = 0, end = buf; *end && *end != '\n' && i++ < 900; end++)
+              ;
+      end += 10;
+      strncpy (first_line, buf, end - buf + 1);
+      first_line[end - buf + 1] = '\0';
+      printf("GOT buf (len=%d)\nFirst line: %s\n", len, first_line);
     }
 
     if ((c = *p++) == 'V') {
       if (*p++ != 'A' || *p++ != 'L' || *p++ != 'U' || *p++ != 'E' || *p++ != ' ') {
-	if (DEBUG)
-	  puts ("ERROR: Illegal command beginning with V");
-	goto recover_from_partial_line;
+        if (DEBUG)
+          puts ("ERROR: Illegal command beginning with V");
+        goto recover_from_partial_line;
       }
-	
+
       // Parsing VALUE %s<key> %u<flags> %u<bytes>
 
       for (key = p; *p++ > ' ';)
-	;
+        ;
       key_len = p - key - 1;
       if (*(p - 1) != ' ') {
-	if (DEBUG)
-	  printf ("ERROR: key not space-terminated: key %s, char %c\n", key, *(p - 1));
-	goto recover_from_partial_line;		
+        if (DEBUG)
+          printf ("ERROR: key not space-terminated: key %s, char %c\n", key, *(p - 1));
+        goto recover_from_partial_line;
       }
       // Note that key just points into the buffer and is not null-terminated
       // yet.  Leave it that way in case we're dealing with a partial line.
@@ -143,20 +143,20 @@ int parse_buffer (SV* selfref) {
       // are not caught and will result in strange numbers.
 
       for (flags = 0; (c = *p++ - '0') >= 0; flags = flags * 10 + c)
-	;
+        ;
       if (c != (signed char)' ' - '0') {
-	if (DEBUG)
-	  puts ("ERROR: Flags not space terminated");
-	goto recover_from_partial_line;			
+        if (DEBUG)
+          puts ("ERROR: Flags not space terminated");
+        goto recover_from_partial_line;
       }
 
-      
+
       for (itemlen = 0; (c = *p++ - '0') >= 0; itemlen = itemlen * 10 + c)
-	;
+        ;
       if (c != (signed char)'\r' - '0' || *p++ != '\n') {
-	if (DEBUG)
-	  puts ("ERROR: byte count not CRLF-terminated");
-	goto recover_from_partial_line;			
+        if (DEBUG)
+          puts ("ERROR: byte count not CRLF-terminated");
+        goto recover_from_partial_line;
       }
 
 
@@ -169,14 +169,14 @@ int parse_buffer (SV* selfref) {
       barelen = key_len - nslen;
 
       if (DEBUG) {
-	char temp_key[256];
-	strncpy (temp_key, key, key_len);
-	temp_key[key_len] = '\0';
+        char temp_key[256];
+        strncpy (temp_key, key, key_len);
+        temp_key[key_len] = '\0';
         printf("key=[%s], state=%d, copy=%d\n", key, state, copy);
       }
 
       if (copy) {
-	*(key + key_len) = '\0';	// Null-terminate the key in-buffer
+        *(key + key_len) = '\0';        // Null-terminate the key in-buffer
         hv_store(ret, barekey, barelen, newSVpv(buf + new_p, copy), 0);
         buf[new_p + copy - 1] = '\0';
 
@@ -220,16 +220,16 @@ int parse_buffer (SV* selfref) {
     }
 
     else if (c == 'E') {
-      
+
       // Parsing END
-      
+
       if (*p++ == 'N' && *p++ == 'D' && *p++ == '\r' && *p == '\n')
-	return final_answer(self, 1);
+        return final_answer(self, 1);
     }
     // Just fall through if after 'E' was not "ND\r\n"
 
-    else 
-      ;			// Unknown command: not 'E' or 'V' at [0]
+    else
+      ;         // Unknown command: not 'E' or 'V' at [0]
 
 
     /* # if we're here probably means we only have a partial VALUE
@@ -303,7 +303,7 @@ int parse_from_sock_xx (SV* selfref, SV* sock, int sockfd) {
   */
 }
 
-MODULE = Cache::Memcached::GetParserXS		PACKAGE = Cache::Memcached::GetParserXS		
+MODULE = Cache::Memcached::GetParserXS      PACKAGE = Cache::Memcached::GetParserXS
 
 INCLUDE: const-xs.inc
 
