@@ -14,6 +14,7 @@
 #define OFFSET   5  /* offsets to read into buffers */
 #define FLAGS    6
 #define KEY      7  /* current key we're parsing (without the namespace prefix) */
+#define FINISHED 8  /* hashref of keys and flags to be finalized at any time */
 
 #define DEBUG    0
 
@@ -42,6 +43,20 @@ inline SV *get_on_item (AV* self) {
   return 0;
 }
 
+inline SV *get_offset_sv (AV* self) {
+  SV** svp = av_fetch(self, OFFSET, 0);
+  if (svp)
+    return (SV*) *svp;
+
+  *svp = newSViv(0);
+  av_store(self, OFFSET, *svp);
+  return (SV*) *svp;
+}
+
+inline void clear_on_item (AV* self) {
+  SV** svp = av_store(self, ON_ITEM, newSV(0) );
+}
+
 inline void set_flags (AV* self, int flags) {
   av_store(self, FLAGS, newSViv(flags));
 }
@@ -56,6 +71,13 @@ inline void set_state (AV* self, int state) {
 
 inline HV* get_dest (AV* self) {
   SV** svp = av_fetch(self, DEST, 0);
+  if (svp)
+    return (HV*) SvRV(*svp);
+  return 0;
+}
+
+inline HV* get_finished (AV* self) {
+  SV** svp = av_fetch(self, FINISHED, 0);
   if (svp)
     return (HV*) SvRV(*svp);
   return 0;
@@ -98,6 +120,8 @@ int parse_buffer (SV* selfref) {
   int key_len, barelen;
   int state, copy, new_p;
   char *barekey;
+
+  HV* finished = get_finished(self);
 
   if (DEBUG)
     printf("get_buffer (nslen = %d)...\n", nslen);
@@ -189,24 +213,14 @@ int parse_buffer (SV* selfref) {
       sv_chop(bufsv, buf + new_p + copy);
 
       if (copy == state) {
-        dSP ;
-
-         /* have it all? */
-        ENTER ;
-        SAVETMPS ;
-        PUSHMARK(SP) ;
-        XPUSHs(sv_2mortal(newSVpv(barekey, barelen)));
-        XPUSHs(sv_2mortal(newSViv(flags)));
-        PUTBACK ;
-        call_sv(on_item, G_VOID | G_DISCARD);
-        FREETMPS ;
-        LEAVE ;
+        hv_store(finished, barekey, barelen, newSViv(flags), 0);
 
         set_offset(self, 0);
         set_state(self, 0);
         continue;
       } else {
         /* don't have it all... but buffer is now empty */
+        hv_store(finished, barekey, barelen, newSViv(flags), 0);
         set_offset(self, copy);
         set_flags(self, flags);
         set_key(self, barekey, barelen);
