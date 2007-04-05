@@ -268,13 +268,54 @@ int parse_from_sock_xx (SV* selfref, SV* sock, int sockfd) {
   int state = get_state(self);
 
   if (state) {
-    //res = read(sockfd, *buf, state);
+    // We're reading into a key, get the SV for the key
+    SV* key = get_key_sv(self);
+    SV* offset = get_offset_sv(self);
+    STRLEN keylen;
+    char *keyptr = SvPV(key, keylen);
+
+    STRLEN buflen;
+    char* buf;
+
+    // Then we try to get the value
+    SV** valptr = hv_fetch(ret, keyptr, keylen, 0);
+    if (valptr) {
+      // Got a real value, must be an SV
+      buf = SvPV(*valptr, buflen);
+    } else {
+      // If we get null back, it's because the entry didn't exist, vivify it.
+      New(0, buf, state, char);
+      *valptr = newSVpvn(buf, state);
+    }
+
+    if (buflen < SvIV(offset) + state) {
+      // Buffer is too short, Renew it to the proper length
+      Renew(buf, SvIV(offset) + state, char);
+    }
+
+    // Finally, read the data into the buffer
+    res = read(sockfd, (buf + SvIV(offset)), (state - SvIV(offset)));
+
+    if (res < 0 && errno == EWOULDBLOCK)
+      return 0;
+
+    if (res == 0) {
+      clear_on_item(self);
+      return -1;
+    }
+
+    sv_setiv(offset, (SvIV(offset) + res));
+
+    if (SvIV(offset) == state) {
+      
+    }
   }
 
   printf("fileno = %d\n", sockfd);
 
   printf("got = %x, state = %d\n", ret, state);
   return -1;
+}
 
   /*
     # where are we reading into?
@@ -315,7 +356,6 @@ int parse_from_sock_xx (SV* selfref, SV* sock, int sockfd) {
     $self->[OFFSET] += $res;
 
   */
-}
 
 MODULE = Cache::Memcached::GetParserXS      PACKAGE = Cache::Memcached::GetParserXS
 
