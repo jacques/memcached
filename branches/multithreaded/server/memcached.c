@@ -146,7 +146,7 @@ static rel_time_t realtime(const time_t exptime) {
 
 static void stats_init(void) {
     stats.curr_items = stats.total_items = stats.curr_conns = stats.total_conns = stats.conn_structs = 0;
-    stats.get_cmds = stats.set_cmds = stats.get_hits = stats.get_misses = 0;
+    stats.get_cmds = stats.set_cmds = stats.get_hits = stats.get_misses = stats.evictions = 0;
     stats.curr_bytes = stats.bytes_read = stats.bytes_written = 0;
 
     /* make the time we started always be 2 seconds before we really
@@ -160,7 +160,7 @@ static void stats_init(void) {
 static void stats_reset(void) {
     STATS_LOCK();
     stats.total_items = stats.total_conns = 0;
-    stats.get_cmds = stats.set_cmds = stats.get_hits = stats.get_misses = 0;
+    stats.get_cmds = stats.set_cmds = stats.get_hits = stats.get_misses = stats.evictions = 0;
     stats.bytes_read = stats.bytes_written = 0;
     stats_prefix_clear();
     STATS_UNLOCK();
@@ -865,6 +865,7 @@ static void process_stat(conn *c, token_t* tokens, const size_t ntokens) {
         pos += sprintf(pos, "STAT cmd_set %llu\r\n", stats.set_cmds);
         pos += sprintf(pos, "STAT get_hits %llu\r\n", stats.get_hits);
         pos += sprintf(pos, "STAT get_misses %llu\r\n", stats.get_misses);
+        pos += sprintf(pos, "STAT evictions %llu\r\n", stats.evictions);
         pos += sprintf(pos, "STAT bytes_read %llu\r\n", stats.bytes_read);
         pos += sprintf(pos, "STAT bytes_written %llu\r\n", stats.bytes_written);
         pos += sprintf(pos, "STAT limit_maxbytes %llu\r\n", (unsigned long long) settings.maxbytes);
@@ -2424,7 +2425,7 @@ int main (int argc, char **argv) {
     setbuf(stderr, NULL);
 
     /* process arguments */
-    while ((c = getopt(argc, argv, "bp:s:U:m:Mc:khirvdl:u:P:f:t:D:")) != -1) {
+    while ((c = getopt(argc, argv, "bp:s:U:m:Mc:khirvdl:u:P:f:s:n:t:D:")) != -1) {
         switch (c) {
         case 'U':
             settings.udpport = atoi(optarg);
