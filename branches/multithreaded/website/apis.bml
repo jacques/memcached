@@ -53,6 +53,14 @@ the memcached.</p>
 <li><a href="http://people.freebsd.org/~seanc/libmemcache/">libmemcache</a> by Sean Chittenden; BSD license.</li>
 </ul>
 
+<?h1 Postgres API h1?>
+<p>The pgmemcache project allows
+you to access memcache servers from Postgresql Stored Procedures and Triggers.  
+More details and downloads are available at:</p>
+
+<ul>
+<li><a href="http://pgfoundry.org/projects/pgmemcache/">http://pgfoundry.org/projects/pgmemcache/</a>
+</ul>
 
 <?h1 Protocol h1?> <p>To write a new client, check out the <a
 href="http://code.sixapart.com/svn/memcached/trunk/server/doc/protocol.txt">protocol
