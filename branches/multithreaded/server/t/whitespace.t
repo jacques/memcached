@@ -1,8 +1,14 @@
 #!/usr/bin/perl
 use strict;
 use FindBin qw($Bin);
-chdir "$Bin/.." or die;
-my @files = (glob("*.h"), glob("*.c"), glob("*.ac"));
+our @files;
+
+BEGIN {
+    chdir "$Bin/.." or die;
+    @files = (glob("*.h"), glob("*.c"), glob("*.ac"));
+}
+use Test::More tests => scalar(@files);
+
 foreach my $f (@files) {
     open(my $fh, $f) or die;
     my $before = do { local $/; <$fh>; };
@@ -11,8 +17,5 @@ foreach my $f (@files) {
     $after =~ s/\t/    /g;
     $after =~ s/ +$//mg;
     $after .= "\n" unless $after =~ /\n$/;
-    next if $after eq $before;
-    open(my $fh, ">$f") or die;
-    print $fh $after;
-    close($fh);
+    ok ($after eq $before, "$f (see devtools/clean-whitespace.pl)");
 }

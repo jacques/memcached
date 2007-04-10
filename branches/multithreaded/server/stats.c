@@ -127,7 +127,7 @@ void stats_prefix_record_get(char *key, int is_hit) {
  */
 void stats_prefix_record_delete(char *key) {
     PREFIX_STATS *pfs;
-    
+
     STATS_LOCK();
     pfs = stats_prefix_find(key);
     if (NULL != pfs) {
@@ -141,7 +141,7 @@ void stats_prefix_record_delete(char *key) {
  */
 void stats_prefix_record_set(char *key) {
     PREFIX_STATS *pfs;
-    
+
     STATS_LOCK();
     pfs = stats_prefix_find(key);
     if (NULL != pfs) {
@@ -181,12 +181,12 @@ char *stats_prefix_dump(int *length) {
     pos = 0;
     for (i = 0; i < PREFIX_HASH_SIZE; i++) {
         for (pfs = prefix_stats[i]; NULL != pfs; pfs = pfs->next) {
-            pos += sprintf(buf + pos, format, 
+            pos += sprintf(buf + pos, format,
                            pfs->prefix, pfs->num_gets, pfs->num_hits,
                            pfs->num_sets, pfs->num_deletes);
         }
     }
-    
+
     STATS_UNLOCK();
     strcpy(buf + pos, "END\r\n");
 

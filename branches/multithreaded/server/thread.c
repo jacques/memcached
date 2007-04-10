@@ -301,21 +301,21 @@ static void thread_libevent_process(int fd, short which, void *arg) {
             fprintf(stderr, "Can't read from libevent pipe\n");
 
     if (item = cq_peek(&me->new_conn_queue)) {
-	conn *c = conn_new(item->sfd, item->init_state, item->event_flags,
-	                   item->read_buffer_size, item->is_udp, me->base);
-	if (!c) {
-	    if (item->is_udp) {
-	        fprintf(stderr, "Can't listen for events on UDP socket\n");
-	        exit(1);
+    conn *c = conn_new(item->sfd, item->init_state, item->event_flags,
+                       item->read_buffer_size, item->is_udp, me->base);
+    if (!c) {
+        if (item->is_udp) {
+            fprintf(stderr, "Can't listen for events on UDP socket\n");
+            exit(1);
             }
-	    else {
-		if (settings.verbose > 0) {
-	            fprintf(stderr, "Can't listen for events on fd %d\n",
-		            item->sfd);
-		}
-		close(item->sfd);
-	    }
-	}
+        else {
+        if (settings.verbose > 0) {
+                fprintf(stderr, "Can't listen for events on fd %d\n",
+                    item->sfd);
+        }
+        close(item->sfd);
+        }
+    }
         cqi_free(item);
     }
 }
@@ -594,7 +594,7 @@ void thread_init(int nthreads, struct event_base *main_base) {
         threads[i].notify_receive_fd = fds[0];
         threads[i].notify_send_fd = fds[1];
 
-	setup_thread(&threads[i]);
+    setup_thread(&threads[i]);
     }
 
     /* Create threads after we've done all the libevent setup. */

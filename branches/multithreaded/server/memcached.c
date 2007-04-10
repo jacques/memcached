@@ -61,7 +61,7 @@
 #endif
 
 /*
- * forward declarations 
+ * forward declarations
  */
 static void drive_machine(conn *c);
 static int new_socket(const bool is_udp);
@@ -484,7 +484,7 @@ static void conn_shrink(conn *c) {
             c->ilist = newbuf;
             c->isize = ITEM_LIST_INITIAL;
         }
-	/* TODO check error condition? */
+    /* TODO check error condition? */
     }
 
     if (c->msgsize > MSG_LIST_HIGHWAT) {
@@ -493,7 +493,7 @@ static void conn_shrink(conn *c) {
             c->msglist = newbuf;
             c->msgsize = MSG_LIST_INITIAL;
         }
-	/* TODO check error condition? */
+    /* TODO check error condition? */
     }
 
     if (c->iovsize > IOV_LIST_HIGHWAT) {
@@ -502,7 +502,7 @@ static void conn_shrink(conn *c) {
             c->iov = newbuf;
             c->iovsize = IOV_LIST_INITIAL;
         }
-	/* TODO check return value */
+    /* TODO check return value */
     }
 }
 
@@ -754,14 +754,14 @@ typedef struct token_s {
 #define KEY_TOKEN 1
 #define KEY_MAX_LENGTH 250
 
-#define MAX_TOKENS 6 
+#define MAX_TOKENS 6
 
 /*
  * Tokenize the command string by replacing whitespace with '\0' and update
  * the token array tokens with pointer to start of each token and length.
  * Returns total number of tokens.  The last valid token is the terminal
  * token (value points to the first unprocessed character of the string and
- * length zero).  
+ * length zero).
  *
  * Usage example:
  *
@@ -779,12 +779,12 @@ static size_t tokenize_command(char *command, token_t *tokens, const size_t max_
     size_t length = 0;
     size_t ntokens = 0;
 
-    assert(command != NULL && tokens != NULL && max_tokens > 1); 
+    assert(command != NULL && tokens != NULL && max_tokens > 1);
 
     cp = command;
     while(*cp != '\0' && ntokens < max_tokens - 1) {
         if(*cp == ' ') {
-            // If we've accumulated a token, this is the end of it. 
+            // If we've accumulated a token, this is the end of it.
             if(length > 0) {
                 tokens[ntokens].value = value;
                 tokens[ntokens].length = length;
@@ -942,7 +942,7 @@ static void process_stat(conn *c, token_t *tokens, const size_t ntokens) {
             out_string(c, "SERVER_ERROR out of memory");
             return;
         }
-            
+
         fd = open("/proc/self/maps", O_RDONLY);
         if (fd == -1) {
             out_string(c, "SERVER_ERROR cannot open the maps file");
@@ -964,7 +964,7 @@ static void process_stat(conn *c, token_t *tokens, const size_t ntokens) {
         strcpy(wbuf + res, "END\r\n");
         c->write_and_free = wbuf;
         c->wcurr = wbuf;
-        c->wbytes = res + 5; // Don't write the terminal '\0' 
+        c->wbytes = res + 5; // Don't write the terminal '\0'
         conn_set_state(c, conn_write);
         c->write_and_go = conn_read;
         close(fd);
@@ -1077,15 +1077,15 @@ static inline void process_get_command(conn *c, token_t *tokens, size_t ntokens)
 
     do {
         while(key_token->length != 0) {
-            
+
             key = key_token->value;
             nkey = key_token->length;
-            
+
             if(nkey > KEY_MAX_LENGTH) {
                 out_string(c, "CLIENT_ERROR bad command line format");
                 return;
             }
-                
+
             STATS_LOCK();
             stats.get_cmds++;
             STATS_UNLOCK();
@@ -1101,7 +1101,7 @@ static inline void process_get_command(conn *c, token_t *tokens, size_t ntokens)
                         c->ilist = new_list;
                     } else break;
                 }
-                    
+
                 /*
                  * Construct the response. Each hit adds three elements to the
                  * outgoing data list:
@@ -1131,7 +1131,7 @@ static inline void process_get_command(conn *c, token_t *tokens, size_t ntokens)
                 stats.get_misses++;
                 STATS_UNLOCK();
             }
-            
+
             key_token++;
         }
 
@@ -1143,16 +1143,16 @@ static inline void process_get_command(conn *c, token_t *tokens, size_t ntokens)
             ntokens = tokenize_command(key_token->value, tokens, MAX_TOKENS);
             key_token = tokens;
         }
-        
+
     } while(key_token->value != NULL);
 
     c->icurr = c->ilist;
     c->ileft = i;
-            
+
     if (settings.verbose > 1)
         fprintf(stderr, ">%d END\n", c->sfd);
     add_iov(c, "END\r\n", 5);
-        
+
     if (c->udp && build_udp_headers(c) != 0) {
         out_string(c, "SERVER_ERROR out of memory");
     }
@@ -1184,7 +1184,7 @@ static void process_update_command(conn *c, token_t *tokens, const size_t ntoken
     flags = strtoul(tokens[2].value, NULL, 10);
     exptime = strtol(tokens[3].value, NULL, 10);
     vlen = strtol(tokens[4].value, NULL, 10);
-    
+
     if(errno == ERANGE || ((flags == 0 || exptime == 0) && errno == EINVAL)) {
         out_string(c, "CLIENT_ERROR bad command line format");
         return;
@@ -1219,7 +1219,7 @@ static void process_update_command(conn *c, token_t *tokens, const size_t ntoken
         c->sbytes = vlen + 2;
         return;
     }
-    
+
     c->item_comm = comm;
     c->item = it;
     c->ritem = ITEM_data(it);
@@ -1233,17 +1233,17 @@ static void process_arithmetic_command(conn *c, token_t *tokens, const size_t nt
     unsigned int delta;
     char *key;
     size_t nkey;
-    
+
     assert(c != NULL);
 
-    if(tokens[KEY_TOKEN].length > KEY_MAX_LENGTH) { 
+    if(tokens[KEY_TOKEN].length > KEY_MAX_LENGTH) {
         out_string(c, "CLIENT_ERROR bad command line format");
         return;
     }
 
     key = tokens[KEY_TOKEN].value;
     nkey = tokens[KEY_TOKEN].length;
-        
+
     if (settings.managed) {
         int bucket = c->bucket;
         if (bucket == -1) {
@@ -1258,7 +1258,7 @@ static void process_arithmetic_command(conn *c, token_t *tokens, const size_t nt
     }
 
     delta = strtoul(tokens[2].value, NULL, 10);
-        
+
     if(errno == ERANGE) {
         out_string(c, "CLIENT_ERROR bad command line format");
         return;
@@ -1281,7 +1281,7 @@ static void process_arithmetic_command(conn *c, token_t *tokens, const size_t nt
  * incr  true to increment value, false to decrement
  * delta amount to adjust value by
  * buf   buffer for response string
- * 
+ *
  * returns a response string to send back to the client.
  */
 char *do_add_delta(item *it, int incr, unsigned int delta, char *buf) {
@@ -1291,7 +1291,7 @@ char *do_add_delta(item *it, int incr, unsigned int delta, char *buf) {
 
     ptr = ITEM_data(it);
     while ((*ptr != '\0') && (*ptr < '0' && *ptr > '9')) ptr++;    // BUG: can't be true
-        
+
     value = strtol(ptr, NULL, 10);
 
     if(errno == ERANGE) {
@@ -1329,7 +1329,7 @@ static void process_delete_command(conn *c, token_t *tokens, const size_t ntoken
     size_t nkey;
     item *it;
     time_t exptime = 0;
-    
+
     assert(c != NULL);
 
     if (settings.managed) {
@@ -1344,7 +1344,7 @@ static void process_delete_command(conn *c, token_t *tokens, const size_t ntoken
             return;
         }
     }
-    
+
     key = tokens[KEY_TOKEN].value;
     nkey = tokens[KEY_TOKEN].length;
 
@@ -1355,7 +1355,7 @@ static void process_delete_command(conn *c, token_t *tokens, const size_t ntoken
 
     if(ntokens == 4) {
         exptime = strtol(tokens[2].value, NULL, 10);
-        
+
         if(errno == ERANGE) {
             out_string(c, "CLIENT_ERROR bad command line format");
             return;
@@ -1393,8 +1393,8 @@ char *do_defer_delete(item *it, time_t exptime)
         if (new_delete) {
             todelete = new_delete;
             deltotal *= 2;
-        } else { 
-            /* 
+        } else {
+            /*
              * can't delete it immediately, user wants a delay,
              * but we ran out of memory for the delete queue
              */
@@ -1402,7 +1402,7 @@ char *do_defer_delete(item *it, time_t exptime)
             return "SERVER_ERROR out of memory";
         }
     }
-    
+
     /* use its expiration time as its deletion time now */
     it->exptime = realtime(exptime);
     it->it_flags |= ITEM_DELETED;
@@ -1412,7 +1412,7 @@ char *do_defer_delete(item *it, time_t exptime)
 }
 
 static void process_command(conn *c, char *command) {
-    
+
     token_t tokens[MAX_TOKENS];
     size_t ntokens;
     int comm;
@@ -1422,11 +1422,11 @@ static void process_command(conn *c, char *command) {
     if (settings.verbose > 1)
         fprintf(stderr, "<%d %s\n", c->sfd, command);
 
-    /* 
+    /*
      * for commands set/add/replace, we build an item and read the data
      * directly into it, then continue in nread_complete().
-     */ 
-    
+     */
+
     c->msgcurr = 0;
     c->msgused = 0;
     c->iovused = 0;
@@ -1440,14 +1440,14 @@ static void process_command(conn *c, char *command) {
     if (ntokens >= 3 &&
         ((strcmp(tokens[COMMAND_TOKEN].value, "get") == 0) ||
          (strcmp(tokens[COMMAND_TOKEN].value, "bget") == 0))) {
-        
+
         process_get_command(c, tokens, ntokens);
 
-    } else if (ntokens == 6 && 
-               ((strcmp(tokens[COMMAND_TOKEN].value, "add") == 0 && (comm = NREAD_ADD)) || 
+    } else if (ntokens == 6 &&
+               ((strcmp(tokens[COMMAND_TOKEN].value, "add") == 0 && (comm = NREAD_ADD)) ||
                 (strcmp(tokens[COMMAND_TOKEN].value, "set") == 0 && (comm = NREAD_SET)) ||
                 (strcmp(tokens[COMMAND_TOKEN].value, "replace") == 0 && (comm = NREAD_REPLACE)))) {
-        
+
         process_update_command(c, tokens, ntokens, comm);
 
     } else if (ntokens == 4 && (strcmp(tokens[COMMAND_TOKEN].value, "incr") == 0)) {
@@ -1468,7 +1468,7 @@ static void process_command(conn *c, char *command) {
             out_string(c, "CLIENT_ERROR not a managed instance");
             return;
         }
-        
+
         if (sscanf(tokens[1].value, "%u:%u", &bucket,&gen) == 2) {
             if ((bucket < 0) || (bucket >= MAX_BUCKETS)) {
                 out_string(c, "CLIENT_ERROR bucket number out of range");
@@ -1524,7 +1524,7 @@ static void process_command(conn *c, char *command) {
         }
 
     } else if (ntokens >= 2 && (strcmp(tokens[COMMAND_TOKEN].value, "stats") == 0)) {
-        
+
         process_stat(c, tokens, ntokens);
 
     } else if (ntokens >= 2 && ntokens <= 3 && (strcmp(tokens[COMMAND_TOKEN].value, "flush_all") == 0)) {
@@ -1548,7 +1548,7 @@ static void process_command(conn *c, char *command) {
         item_flush_expired();
         out_string(c, "OK");
         return;
- 
+
     } else if (ntokens == 2 && (strcmp(tokens[COMMAND_TOKEN].value, "version") == 0)) {
 
         out_string(c, "VERSION " VERSION);
@@ -1556,7 +1556,7 @@ static void process_command(conn *c, char *command) {
     } else if (ntokens == 2 && (strcmp(tokens[COMMAND_TOKEN].value, "quit") == 0)) {
 
         conn_set_state(c, conn_closing);
-        
+
     } else if (ntokens == 5 && (strcmp(tokens[COMMAND_TOKEN].value, "slabs") == 0 &&
                                 strcmp(tokens[COMMAND_TOKEN + 1].value, "reassign") == 0)) {
 #ifdef ALLOW_SLABS_REASSIGN
@@ -2706,7 +2706,7 @@ int main (int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
     /* create the initial listening connection */
-    if (!(listen_conn = conn_new(l_socket, conn_listening, 
+    if (!(listen_conn = conn_new(l_socket, conn_listening,
                                  EV_READ | EV_PERSIST, 1, false, main_base))) {
         fprintf(stderr, "failed to create listening connection");
         exit(EXIT_FAILURE);
