@@ -465,10 +465,12 @@ static void conn_shrink(conn *c) {
         return;
 
     if (c->rsize > READ_BUFFER_HIGHWAT && c->rbytes < DATA_BUFFER_SIZE) {
+        char *newbuf;
+
         if (c->rcurr != c->rbuf)
             memmove(c->rbuf, c->rcurr, (size_t)c->rbytes);
 
-        char *newbuf = (char *)realloc((void *)c->rbuf, DATA_BUFFER_SIZE);
+        newbuf = (char *)realloc((void *)c->rbuf, DATA_BUFFER_SIZE);
 
         if (newbuf) {
             c->rbuf = newbuf;
@@ -651,7 +653,7 @@ static int build_udp_headers(conn *c) {
 
 
 static void out_string(conn *c, const char *str) {
-    int len;
+    size_t len;
 
     assert(c != NULL);
 
@@ -665,8 +667,8 @@ static void out_string(conn *c, const char *str) {
         len = strlen(str);
     }
 
-    strcpy(c->wbuf, str);
-    strcpy(c->wbuf + len, "\r\n");
+    memcpy(c->wbuf, str, len);
+    memcpy(c->wbuf + len, "\r\n", 2);
     c->wbytes = len + 2;
     c->wcurr = c->wbuf;
 
@@ -1418,7 +1420,7 @@ static void process_verbosity_command(conn *c, token_t *tokens, const size_t nto
 
     level = strtoul(tokens[1].value, NULL, 10);
     settings.verbose = level > MAX_VERBOSITY_LEVEL ? MAX_VERBOSITY_LEVEL : level;
-    out_string(c, "DONE");
+    out_string(c, "OK");
     return;
 }
 
@@ -1786,8 +1788,6 @@ void accept_new_conns(const bool do_accept) {
  *   TRANSMIT_HARD_ERROR Can't write (c->state is set to conn_closing)
  */
 static int transmit(conn *c) {
-    int res;
-
     assert(c != NULL);
 
     if (c->msgcurr < c->msgused &&
@@ -1796,7 +1796,9 @@ static int transmit(conn *c) {
         c->msgcurr++;
     }
     if (c->msgcurr < c->msgused) {
+        ssize_t res;
         struct msghdr *m = &c->msglist[c->msgcurr];
+
         res = sendmsg(c->sfd, m, 0);
         if (res > 0) {
             STATS_LOCK();
@@ -1853,6 +1855,7 @@ static void drive_machine(conn *c) {
     assert(c != NULL);
 
     while (!stop) {
+
         switch(c->state) {
         case conn_listening:
             addrlen = sizeof(addr);
@@ -2191,7 +2194,7 @@ static int new_socket_unix(void) {
     return sfd;
 }
 
-static int server_socket_unix(char *path) {
+static int server_socket_unix(const char *path) {
     int sfd;
     struct linger ling = {0, 0};
     struct sockaddr_un addr;
