@@ -102,7 +102,7 @@ item *do_item_alloc(char *key, const size_t nkey, const int flags, const rel_tim
         if (id > LARGEST_ID) return NULL;
         if (tails[id] == 0) return NULL;
 
-        for (search = tails[id]; tries > 0 && search; tries--, search=search->prev) {
+        for (search = tails[id]; tries > 0 && search != NULL; tries--, search=search->prev) {
             if (search->refcount == 0) {
                if (search->exptime > current_time) {
                        STATS_LOCK();

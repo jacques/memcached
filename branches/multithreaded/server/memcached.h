@@ -60,6 +60,8 @@ struct stats {
     unsigned long long bytes_written;
 };
 
+#define MAX_VERBOSITY_LEVEL 2
+
 struct settings {
     size_t maxbytes;
     int maxconns;
