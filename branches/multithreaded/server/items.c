@@ -236,7 +236,7 @@ void do_item_unlink(item *it) {
 
 void do_item_remove(item *it) {
     assert((it->it_flags & ITEM_SLABBED) == 0);
-    if (it->refcount) {
+    if (it->refcount != 0) {
         it->refcount--;
         DEBUG_REFCNT(it, '-');
     }

@@ -97,7 +97,7 @@ static void set_current_time(void);  /* update the global variable holding
                               (to avoid 64 bit time_t) */
 
 void pre_gdb(void);
-void conn_free(conn *c);
+static void conn_free(conn *c);
 
 /** exported globals **/
 struct stats stats;
@@ -1867,10 +1867,10 @@ static void drive_machine(conn *c) {
                     if (settings.verbose > 0)
                         fprintf(stderr, "Too many open connections\n");
                     accept_new_conns(false);
-                    stop = 1;
+                    stop = true;
                 } else {
                     perror("accept()");
-                    stop = 1;
+                    stop = true;
                 }
                 break;
             }

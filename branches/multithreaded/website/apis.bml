@@ -18,7 +18,10 @@ the memcached.</p>
 
 <?h1 PHP API h1?>
 
-<p>There are tons of PHP libraries available, in different conditions.  The community hasn't yet decided which is the best.  When they do, let me know.  For now I'll let you search Google rather than link any.</p>
+<p>There are tons of PHP libraries available, in different conditions.  But it now seems there's an official one:</p>
+<ul>
+<li><a href="http://pecl.php.net/package/memcache">PHP PECL memcached client</a> -- official PHP client</li>
+</ul>
 
 <?h1 Python API h1?>
 

@@ -153,7 +153,7 @@ static void slabs_preallocate (const unsigned int maxslabs) {
        list.  if you really don't want this, you can rebuild without
        these three lines.  */
 
-    for(i = POWER_SMALLEST; i <= POWER_LARGEST; i++) {
+    for (i = POWER_SMALLEST; i <= POWER_LARGEST; i++) {
         if (++prealloc > maxslabs)
             return;
         do_slabs_newslab(i);
