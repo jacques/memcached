@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
+#include <stdbool.h>
 
 #define POWER_SMALLEST 1
 #define POWER_LARGEST  200
@@ -80,7 +81,7 @@ static void slabs_preallocate (const unsigned int maxslabs);
 unsigned int slabs_clsid(const size_t size) {
     int res = POWER_SMALLEST;
 
-    if(size == 0)
+    if (size == 0)
         return 0;
     while (size > slabclass[res].size)
         if (res++ == power_largest)     /* won't fit in the biggest slab */
@@ -316,7 +317,7 @@ int do_slabs_reassign(unsigned char srcid, unsigned char dstid) {
     void *slab, *slab_end;
     slabclass_t *p, *dp;
     void *iter;
-    int was_busy = 0;
+    bool was_busy = false;
 
     if (srcid < POWER_SMALLEST || srcid > power_largest ||
         dstid < POWER_SMALLEST || dstid > power_largest)
@@ -341,7 +342,7 @@ int do_slabs_reassign(unsigned char srcid, unsigned char dstid) {
     for (iter = slab; iter < slab_end; iter += p->size) {
         item *it = (item *)iter;
         if (it->slabs_clsid) {
-            if (it->refcount) was_busy = 1;
+            if (it->refcount) was_busy = true;
             item_unlink(it);
         }
     }

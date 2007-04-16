@@ -668,7 +668,7 @@ static void out_string(conn *c, const char *str) {
     }
 
     memcpy(c->wbuf, str, len);
-    memcpy(c->wbuf + len, "\r\n", 2);
+    memcpy(c->wbuf + len, "\r\n", 3);
     c->wbytes = len + 2;
     c->wcurr = c->wbuf;
 
@@ -963,7 +963,7 @@ static void process_stat(conn *c, token_t *tokens, const size_t ntokens) {
             free(wbuf); close(fd);
             return;
         }
-        strcpy(wbuf + res, "END\r\n");
+        memcpy(wbuf + res, "END\r\n", 6);
         c->write_and_free = wbuf;
         c->wcurr = wbuf;
         c->wbytes = res + 5; // Don't write the terminal '\0'
@@ -1315,7 +1315,7 @@ char *do_add_delta(item *it, int incr, unsigned int delta, char *buf) {
             return "SERVER_ERROR out of memory";
         }
         memcpy(ITEM_data(new_it), buf, res);
-        memcpy(ITEM_data(new_it) + res, "\r\n", 2);
+        memcpy(ITEM_data(new_it) + res, "\r\n", 3);
         do_item_replace(it, new_it);
         do_item_remove(new_it);       /* release our reference */
     } else { /* replace in-place */
@@ -2430,7 +2430,7 @@ static void usage_license(void) {
 
 static void save_pid(const pid_t pid, const char *pid_file) {
     FILE *fp;
-    if (!pid_file)
+    if (pid_file == NULL)
         return;
 
     if (!(fp = fopen(pid_file, "w"))) {
@@ -2446,7 +2446,7 @@ static void save_pid(const pid_t pid, const char *pid_file) {
 }
 
 static void remove_pidfile(const char *pid_file) {
-  if (!pid_file)
+  if (pid_file == NULL)
       return;
 
   if (unlink(pid_file) != 0) {
