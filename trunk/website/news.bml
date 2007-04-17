@@ -2,7 +2,30 @@
 wintitle=>news
 body<=
 
-<?h1 News h1?>
+<?h1 News h1?> 
+<p><b>
+
+<p><b>2006-12-05:</b> Version 1.2.1 <a href="download.bml">released</a>.
+Various perfomance improvements.  OpenBSD portability fixes.  New faster hash
+function.  Memcached no longer listens for UDP requests by
+default.  </p>
+
+<p><b>2006-09-09:</b> Version 1.2.0 <a href="download.bml">released</a>.
+Improved memory efficiency of up to 40%.  Better support for large
+memory systems.  CPU consuption is reduced 25-30%.  New UDP interface.
+</p>
+
+<p><b>2006-09-09:</b> Version 1.1.13 <a href="download.bml">released</a>.
+Building is easier, libevent detection is improved, better Solaris
+support.  Fixed some 64-bit issues, fixed a number of off-by-one bugs.
+Fix for confusing out of memory errors.  New feature that allows you
+to execute a flush_all at a specific time.  Make stderr unbuffered.
+</p>
+
+<p><b>2005-04-04:</b> Version 1.1.12 <a href="download.bml">released</a>.
+Fixes for flush_all, immediate deletes and a buffer overflow.  The man
+page now installs correctly.  Memcached now saves a .pid file.  More
+documentation added for the -M and -r flags.</p>
 
 <p><b>2004-04-30:</b> Version 1.1.11 <a
 href="download.bml">released</a>.  New option (off by default) to not
@@ -13,12 +36,12 @@ max connections.
 
 <p><b>2003-12-30:</b> Version 1.1.10 <a
 href="download.bml">released</a>.  Now includes a command to wipe
-the entire cache.
+the entire cache.</p>
 
 <p><b>2003-10-09:</b> Version 1.1.9 <a
 href="download.bml">released</a>, now with better network performance,
 better portability, setuid support, and a fix for a rare crash
-(SIGPIPE) if a client dies.
+(SIGPIPE) if a client dies.</p>
 
 <p><b>2003-08-08:</b> We now have <a href="apis.bml">Python support</a>.</p>
 
