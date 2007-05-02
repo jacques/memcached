@@ -8,6 +8,7 @@ use warnings;
 use Carp;
 use Errno qw( EINPROGRESS EWOULDBLOCK EISCONN );
 use AutoLoader;
+use Cache::Memcached 1.21;
 
 our $VERSION = '0.01';
 
@@ -44,6 +45,22 @@ sub new {
 
 sub current_key {
     return $_[0][KEY];
+}
+
+sub t_parse_buf {
+    my ($self, $buf) = @_;
+    # force buf into \r\n format
+    $buf =~ s/\n/\r\n/g;
+    $buf =~ s/\r\r/\r/g;
+
+    $self->[BUF] .= $buf;
+    $self->[OFFSET] += length $buf;
+    my $rv = $self->parse_buffer;
+    if ($rv > 0) {
+        $self->[ON_ITEM]->($self->[FINISHED]);
+        $self->[ON_ITEM] = undef;
+    }
+    return $rv;
 }
 
 # returns 1 on success, -1 on failure, and 0 if still working.
@@ -91,12 +108,7 @@ sub parse_from_sock {
     my $answer = $self->parse_buffer;
 
     if ($answer > 0) {
-        my $finished = $self->[FINISHED];
-        my $finalize = $self->[ON_ITEM];
-
-        while (my ($key, $flags) = each %$finished) {
-            $finalize->($key, $flags);
-        }
+        $self->[ON_ITEM]->($self->[FINISHED]);
         $self->[ON_ITEM] = undef;
     }
 
