@@ -3,31 +3,108 @@ package Cache::Memcached::GetParserXS;
 use 5.006;
 use strict;
 use warnings;
+# We don't want to inherit from this, because our constants may be different.
+# use base 'Cache::Memcached::GetParser';
 use Carp;
-
-require Exporter;
+use Errno qw( EINPROGRESS EWOULDBLOCK EISCONN );
 use AutoLoader;
 
-our @ISA = qw(Exporter Cache::Memcached::GetParser);
-
-# Items to export into callers namespace by default. Note: do not export
-# names by default without a very good reason. Use EXPORT_OK instead.
-# Do not simply export all your public functions/methods/constants.
-
-# This allows declaration       use Cache::Memcached::GetParserXS ':all';
-# If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
-# will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(
-
-) ] );
-
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
-
-our @EXPORT = qw(
-
-);
-
 our $VERSION = '0.01';
+
+require XSLoader;
+XSLoader::load('Cache::Memcached::GetParserXS', $VERSION);
+
+sub DEST;
+sub NSLEN;
+sub ON_ITEM;
+sub BUF;
+sub STATE;
+sub OFFSET;
+sub FLAGS;
+sub KEY;
+sub FINISHED;
+
+sub new {
+    my ($class, $dest, $nslen, $on_item) = @_;
+
+    my $self = bless [], (ref $class || $class);
+
+    $self->[DEST]     = $dest;
+    $self->[NSLEN]    = $nslen;
+    $self->[ON_ITEM]  = $on_item;
+    $self->[BUF]      = '';
+    $self->[STATE]    = 0;
+    $self->[OFFSET]   = 0;
+    $self->[FLAGS]    = undef;
+    $self->[KEY]      = undef;
+    $self->[FINISHED] = {};
+
+    return $self
+}
+
+sub current_key {
+    return $_[0][KEY];
+}
+
+# returns 1 on success, -1 on failure, and 0 if still working.
+sub parse_from_sock {
+    my ($self, $sock) = @_;
+    my $res;
+
+    # where are we reading into?
+    if ($self->[STATE]) { # reading value into $ret
+        my $ret = $self->[DEST];
+        $res = sysread($sock, $ret->{$self->[KEY]},
+                       $self->[STATE] - $self->[OFFSET],
+                       $self->[OFFSET]);
+
+        return 0
+            if !defined($res) and $!==EWOULDBLOCK;
+
+        if ($res == 0) { # catches 0=conn closed or undef=error
+            $self->[ON_ITEM] = undef;
+            return -1;
+        }
+
+        $self->[OFFSET] += $res;
+        if ($self->[OFFSET] == $self->[STATE]) { # finished reading
+            $self->[OFFSET] = 0;
+            $self->[STATE]  = 0;
+            # wait for another VALUE line or END...
+        }
+        return 0; # still working, haven't got to end yet
+    }
+
+    # we're reading a single line.
+    # first, read whatever's there, but be satisfied with 2048 bytes
+    $res = sysread($sock, $self->[BUF],
+                   128*1024, $self->[OFFSET]);
+    return 0
+        if !defined($res) and $!==EWOULDBLOCK;
+    if ($res == 0) {
+        $self->[ON_ITEM] = undef;
+        return -1;
+    }
+
+    $self->[OFFSET] += $res;
+
+    my $answer = $self->parse_buffer;
+
+    if ($answer > 0) {
+        my $finished = $self->[FINISHED];
+        my $finalize = $self->[ON_ITEM];
+
+        while (my ($key, $flags) = each %$finished) {
+            $finalize->($key, $flags);
+        }
+    }
+
+    return $answer;
+}
+
+sub DESTROY {} # Empty definition, so AUTOLOAD doesn't catch it
+
+# sub parse_buffer is defined in XS
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()
@@ -51,13 +128,6 @@ sub AUTOLOAD {
     }
     goto &$AUTOLOAD;
 }
-
-require XSLoader;
-XSLoader::load('Cache::Memcached::GetParserXS', $VERSION);
-
-# Preloaded methods go here.
-
-# Autoload methods go after =cut, and are processed by the autosplit program.
 
 1;
 __END__
