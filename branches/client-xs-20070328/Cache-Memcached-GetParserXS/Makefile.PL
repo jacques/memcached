@@ -21,7 +21,7 @@ if  (eval {require ExtUtils::Constant; 1}) {
   # you will need to use the generated const-c.inc and const-xs.inc
   # files to replace their "fallback" counterparts before distributing your
   # changes.
-  my @names = (qw());
+  my @names = (qw(DEST NSLEN ON_ITEM BUF STATE OFFSET FLAGS KEY FINISHED));
   ExtUtils::Constant::WriteConstants(
                                      NAME         => 'Cache::Memcached::GetParserXS',
                                      NAMES        => \@names,
