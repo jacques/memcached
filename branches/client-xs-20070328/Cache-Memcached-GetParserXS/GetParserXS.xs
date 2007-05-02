@@ -4,8 +4,6 @@
 
 #include "ppport.h"
 
-#include "const-c.inc"
-
 #define DEST     0  /* destination hashref we're writing into */
 #define NSLEN    1  /* length of namespace to ignore on keys */
 #define ON_ITEM  2
@@ -17,6 +15,8 @@
 #define FINISHED 8  /* hashref of keys and flags to be finalized at any time */
 
 #define DEBUG    0
+
+#include "const-c.inc"
 
 int get_nslen (AV* self) {
   SV** svp = av_fetch(self, NSLEN, 0);
@@ -83,7 +83,7 @@ inline HV* get_finished (AV* self) {
   return 0;
 }
 
-inline int get_state (AV* self) {
+inline IV get_state (AV* self) {
   SV** svp = av_fetch(self, STATE, 0);
   if (svp)
     return SvIV((SV*) *svp);
@@ -265,7 +265,7 @@ int parse_from_sock_xx (SV* selfref, SV* sock, int sockfd) {
   int res;
   AV* self = (AV*) SvRV(selfref);
   HV* ret = get_dest(self);
-  int state = get_state(self);
+  IV state = get_state(self);
 
   if (state) {
     // We're reading into a key, get the SV for the key
