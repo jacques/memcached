@@ -99,7 +99,7 @@ inline SV* get_buffer (AV* self) {
 
 /* returns an answer, but also unsets ON_ITEM */
 int final_answer (AV* self, int ans) {
-  av_store(self, ON_ITEM, newSV(0));
+//  av_store(self, ON_ITEM, newSV(0));
   return ans;
 }
 

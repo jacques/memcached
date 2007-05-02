@@ -97,6 +97,7 @@ sub parse_from_sock {
         while (my ($key, $flags) = each %$finished) {
             $finalize->($key, $flags);
         }
+        $self->[ON_ITEM] = undef;
     }
 
     return $answer;
