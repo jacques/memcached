@@ -4,8 +4,6 @@
 
 #include "ppport.h"
 
-#include "const-c.inc"
-
 #define DEST     0  /* destination hashref we're writing into */
 #define NSLEN    1  /* length of namespace to ignore on keys */
 #define ON_ITEM  2
@@ -14,8 +12,11 @@
 #define OFFSET   5  /* offsets to read into buffers */
 #define FLAGS    6
 #define KEY      7  /* current key we're parsing (without the namespace prefix) */
+#define FINISHED 8  /* hashref of keys and flags to be finalized at any time */
 
 #define DEBUG    0
+
+#include "const-c.inc"
 
 int get_nslen (AV* self) {
   SV** svp = av_fetch(self, NSLEN, 0);
@@ -24,51 +25,72 @@ int get_nslen (AV* self) {
   return 0;
 }
 
-void set_key (AV* self, const char *key) {
-  av_store(self, KEY, newSVpv(key, strlen(key)));
+inline void set_key (AV* self, const char *key, int len) {
+  av_store(self, KEY, newSVpv(key, len));
 }
 
-SV *get_key_sv (AV* self) {
+inline SV *get_key_sv (AV* self) {
   SV** svp = av_fetch(self, KEY, 0);
   if (svp)
     return (SV*) *svp;
   return 0;
 }
 
-SV *get_on_item (AV* self) {
+inline SV *get_on_item (AV* self) {
   SV** svp = av_fetch(self, ON_ITEM, 0);
   if (svp)
     return (SV*) *svp;
   return 0;
 }
 
-void set_flags (AV* self, int flags) {
+inline SV *get_offset_sv (AV* self) {
+  SV** svp = av_fetch(self, OFFSET, 0);
+  if (svp)
+    return (SV*) *svp;
+
+  *svp = newSViv(0);
+  av_store(self, OFFSET, *svp);
+  return (SV*) *svp;
+}
+
+inline void clear_on_item (AV* self) {
+  SV** svp = av_store(self, ON_ITEM, newSV(0) );
+}
+
+inline void set_flags (AV* self, int flags) {
   av_store(self, FLAGS, newSViv(flags));
 }
 
-void set_offset (AV* self, int offset) {
+inline void set_offset (AV* self, int offset) {
   av_store(self, OFFSET, newSViv(offset));
 }
 
-void set_state (AV* self, int state) {
+inline void set_state (AV* self, int state) {
   av_store(self, STATE, newSViv(state));
 }
 
-HV* get_dest (AV* self) {
+inline HV* get_dest (AV* self) {
   SV** svp = av_fetch(self, DEST, 0);
   if (svp)
     return (HV*) SvRV(*svp);
   return 0;
 }
 
-int get_state (AV* self) {
+inline HV* get_finished (AV* self) {
+  SV** svp = av_fetch(self, FINISHED, 0);
+  if (svp)
+    return (HV*) SvRV(*svp);
+  return 0;
+}
+
+inline IV get_state (AV* self) {
   SV** svp = av_fetch(self, STATE, 0);
   if (svp)
     return SvIV((SV*) *svp);
   return 0;
 }
 
-SV* get_buffer (AV* self) {
+inline SV* get_buffer (AV* self) {
   SV** svp = av_fetch(self, BUF, 0);
   if (svp)
     return *svp;
@@ -77,7 +99,7 @@ SV* get_buffer (AV* self) {
 
 /* returns an answer, but also unsets ON_ITEM */
 int final_answer (AV* self, int ans) {
-  av_store(self, ON_ITEM, newSV(0));
+//  av_store(self, ON_ITEM, newSV(0));
   return ans;
 }
 
@@ -87,12 +109,19 @@ int parse_buffer (SV* selfref) {
   SV* bufsv = get_buffer(self);
   STRLEN len;
   char* buf;
-  char key[257];
   unsigned int itemlen;
   unsigned int flags;
   int scanned;
   int nslen = get_nslen(self);
   SV* on_item = get_on_item(self);
+  register signed char c;
+  char *key;
+  register char *p;
+  int key_len, barelen;
+  int state, copy, new_p;
+  char *barekey;
+
+  HV* finished = get_finished(self);
 
   if (DEBUG)
     printf("get_buffer (nslen = %d)...\n", nslen);
@@ -100,64 +129,101 @@ int parse_buffer (SV* selfref) {
   while (1) {
     int rv;
     buf = SvPV(bufsv, len);
+    p = buf;
 
-    if (DEBUG)
-      printf(" buf (len=%d) = [%s]\n", len, buf);
+    if (DEBUG) {
+      char first_line[1000];
+      int i;
+      char *end;
+      for (i = 0, end = buf; *end && *end != '\n' && i++ < 900; end++)
+              ;
+      end += 10;
+      strncpy (first_line, buf, end - buf + 1);
+      first_line[end - buf + 1] = '\0';
+      printf("GOT buf (len=%d)\nFirst line: %s\n", len, first_line);
+    }
 
-    scanned = 0;
-    rv = sscanf(buf, "VALUE %256s %u %u%n", key, &flags, &itemlen, &scanned);
+    if ((c = *p++) == 'V') {
+      if (*p++ != 'A' || *p++ != 'L' || *p++ != 'U' || *p++ != 'E' || *p++ != ' ') {
+        if (DEBUG)
+          puts ("ERROR: Illegal command beginning with V");
+        goto recover_from_partial_line;
+      }
 
-    if (DEBUG)
-      printf("rv=%d, scanned=%d, one=[%d], two=[%d]\n",
-             rv, scanned, buf[scanned], buf[scanned+1]);
+      // Parsing VALUE %s<key> %u<flags> %u<bytes>
 
-    if (rv >= 3 && scanned && buf[scanned+1] == '\n') {
-      int p     = scanned + 2;      /* 2 to skip \r\n */
-      int state = itemlen + 2;      /* 2 to include reading final \r\n, a different \r\n */
-      int copy  = len - p > state ? state : len - p;
-      char *barekey = key + nslen;
+      for (key = p; *p++ > ' ';)
+        ;
+      key_len = p - key - 1;
+      if (*(p - 1) != ' ') {
+        if (DEBUG)
+          printf ("ERROR: key not space-terminated: key %s, char %c\n", key, *(p - 1));
+        goto recover_from_partial_line;
+      }
+      // Note that key just points into the buffer and is not null-terminated
+      // yet.  Leave it that way in case we're dealing with a partial line.
 
-      if (DEBUG)
+      // Get flags and itemlen as integers.  Note invalid characters 
+      // are not caught and will result in strange numbers.
+
+      for (flags = 0; (c = *p++ - '0') >= 0; flags = flags * 10 + c)
+        ;
+      if (c != (signed char)' ' - '0') {
+        if (DEBUG)
+          puts ("ERROR: Flags not space terminated");
+        goto recover_from_partial_line;
+      }
+
+
+      for (itemlen = 0; (c = *p++ - '0') >= 0; itemlen = itemlen * 10 + c)
+        ;
+      if (c != (signed char)'\r' - '0' || *p++ != '\n') {
+        if (DEBUG)
+          puts ("ERROR: byte count not CRLF-terminated");
+        goto recover_from_partial_line;
+      }
+
+
+      // p is left at the start of the value data.
+
+      new_p = p - buf;
+      state = itemlen + 2;      /* 2 to include reading final \r\n, a different \r\n */
+      copy  = len - new_p > state ? state : len - new_p;
+      barekey = key + nslen;
+      barelen = key_len - nslen;
+
+      if (DEBUG) {
+        char temp_key[256];
+        strncpy (temp_key, key, key_len);
+        temp_key[key_len] = '\0';
         printf("key=[%s], state=%d, copy=%d\n", key, state, copy);
+      }
 
       if (copy) {
-        //SV*  newSVpv(const char*, STRLEN);
-        //SV**  hv_store(HV*, const char* key, U32 klen, SV* val, U32 hash);
-        /*  $ret->{$self->[KEY]} = substr($self->[BUF], $p, $copy) */
-        hv_store(ret, barekey, strlen(barekey), newSVpv(buf + p, copy), 0);
-        buf[p + copy - 1] = '\0';
+        *(key + key_len) = '\0';        // Null-terminate the key in-buffer
+        hv_store(ret, barekey, barelen, newSVpv(buf + new_p, copy), 0);
+        buf[new_p + copy - 1] = '\0';
 
         if (DEBUG)
-          printf("doing store:  len=%d key=[%s] of data [%s]\n",
-                 strlen(barekey), barekey,
-                 buf + p);
+          printf("doing store:  len=%d key=[%s] of data [%c]\n",
+                 strlen(barekey), barekey, *(buf + new_p));
       }
 
       /* delete the stuff we used */
-      sv_chop(bufsv, buf + p + copy);
+      sv_chop(bufsv, buf + new_p + copy);
 
       if (copy == state) {
-        dSP ;
-
-         /* have it all? */
-        ENTER ;
-        SAVETMPS ;
-        PUSHMARK(SP) ;
-        XPUSHs(sv_2mortal(newSVpv(barekey, strlen(barekey))));
-        XPUSHs(sv_2mortal(newSViv(flags)));
-        PUTBACK ;
-        call_sv(on_item, G_VOID | G_DISCARD);
-        FREETMPS ;
-        LEAVE ;
+        hv_store(finished, barekey, barelen, newSViv(flags), 0);
 
         set_offset(self, 0);
         set_state(self, 0);
         continue;
       } else {
         /* don't have it all... but buffer is now empty */
+        hv_store(finished, barekey, barelen, newSViv(flags), 0);
         set_offset(self, copy);
         set_flags(self, flags);
-        set_key(self, barekey);
+        set_key(self, barekey, barelen);
         set_state(self, state);
 
         if (DEBUG)
@@ -167,10 +233,17 @@ int parse_buffer (SV* selfref) {
       }
     }
 
-    if (strncmp(buf, "END\r\n", 5) == 0) {
-      /* we're done successfully, return 1 to finish */
-      return final_answer(self, 1);
+    else if (c == 'E') {
+
+      // Parsing END
+
+      if (*p++ == 'N' && *p++ == 'D' && *p++ == '\r' && *p == '\n')
+        return final_answer(self, 1);
     }
+    // Just fall through if after 'E' was not "ND\r\n"
+
+    else
+      ;         // Unknown command: not 'E' or 'V' at [0]
 
 
     /* # if we're here probably means we only have a partial VALUE
@@ -182,76 +255,15 @@ int parse_buffer (SV* selfref) {
        # partial VALUE/END line.
     */
 
+  recover_from_partial_line:
     set_offset(self, len);
     return 0;
   }
 }
 
-int parse_from_sock_xx (SV* selfref, SV* sock, int sockfd) {
-  int res;
-  AV* self = (AV*) SvRV(selfref);
-  HV* ret = get_dest(self);
-  int state = get_state(self);
-
-  if (state) {
-    //res = read(sockfd, *buf, state);
-  }
-
-  printf("fileno = %d\n", sockfd);
-
-  printf("got = %x, state = %d\n", ret, state);
-  return -1;
-
-  /*
-    # where are we reading into?
-    if ($self->[STATE]) { # reading value into $ret
-        $res = sysread($sock, $ret->{$self->[KEY]},
-                       $self->[STATE] - $self->[OFFSET],
-                       $self->[OFFSET]);
-
-        return 0
-            if !defined($res) and $!==EWOULDBLOCK;
-
-        if ($res == 0) { # catches 0=conn closed or undef=error
-            $self->[ON_ITEM] = undef;
-            return -1;
-        }
-
-        $self->[OFFSET] += $res;
-        if ($self->[OFFSET] == $self->[STATE]) { # finished reading
-            $self->[ON_ITEM]->($self->[KEY], $self->[FLAGS]);
-            $self->[OFFSET] = 0;
-            $self->[STATE]  = 0;
-            # wait for another VALUE line or END...
-        }
-        return 0; # still working, haven't got to end yet
-    }
-
-    # we're reading a single line.
-    # first, read whatever's there, but be satisfied with 2048 bytes
-    $res = sysread($sock, $self->[BUF],
-                   2048, $self->[OFFSET]);
-    return 0
-        if !defined($res) and $!==EWOULDBLOCK;
-    if ($res == 0) {
-        $self->[ON_ITEM] = undef;
-        return -1;
-    }
-
-    $self->[OFFSET] += $res;
-
-  */
-}
-
-MODULE = Cache::Memcached::GetParserXS		PACKAGE = Cache::Memcached::GetParserXS		
+MODULE = Cache::Memcached::GetParserXS      PACKAGE = Cache::Memcached::GetParserXS
 
 INCLUDE: const-xs.inc
-
-int
-parse_from_sock_xx ( self, sock, sockfd )
-    SV *self
-    SV *sock
-    int sockfd
 
 int
 parse_buffer ( self )

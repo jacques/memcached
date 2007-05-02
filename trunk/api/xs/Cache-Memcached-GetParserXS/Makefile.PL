@@ -4,24 +4,26 @@ use ExtUtils::MakeMaker;
 # the contents of the Makefile that is written.
 WriteMakefile(
               OPTIMIZE => '-g',
-    NAME              => 'Cache::Memcached::GetParserXS',
-    VERSION_FROM      => 'lib/Cache/Memcached/GetParserXS.pm', # finds $VERSION
-    PREREQ_PM         => {}, # e.g., Module::Name => 1.1
-    ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
-      (ABSTRACT_FROM  => 'lib/Cache/Memcached/GetParserXS.pm', # retrieve abstract from module
-       AUTHOR         => 'LiveJournal user <lj@>') : ()),
-    LIBS              => [''], # e.g., '-lm'
-    DEFINE            => '', # e.g., '-DHAVE_SOMETHING'
-    INC               => '-I.', # e.g., '-I. -I/usr/include/other'
-        # Un-comment this if you add C files to link with later:
-    # OBJECT            => '$(O_FILES)', # link all the C files too
-);
+              NAME              => 'Cache::Memcached::GetParserXS',
+              VERSION_FROM      => 'lib/Cache/Memcached/GetParserXS.pm', # finds $VERSION
+              PREREQ_PM         => {
+                  'Cache::Memcached' => 1.21,
+              }, # e.g., Module::Name => 1.1
+              ABSTRACT_FROM  => 'lib/Cache/Memcached/GetParserXS.pm', # retrieve abstract from module
+              AUTHOR         => 'LiveJournal user <lj@>',
+              LIBS              => [''], # e.g., '-lm'
+              DEFINE            => '', # e.g., '-DHAVE_SOMETHING'
+              INC               => '-I.', # e.g., '-I. -I/usr/include/other'
+              # Un-comment this if you add C files to link with later:
+              # OBJECT            => '$(O_FILES)', # link all the C files too
+              );
+
 if  (eval {require ExtUtils::Constant; 1}) {
   # If you edit these definitions to change the constants used by this module,
   # you will need to use the generated const-c.inc and const-xs.inc
   # files to replace their "fallback" counterparts before distributing your
   # changes.
-  my @names = (qw());
+  my @names = (qw(DEST NSLEN ON_ITEM BUF STATE OFFSET FLAGS KEY FINISHED));
   ExtUtils::Constant::WriteConstants(
                                      NAME         => 'Cache::Memcached::GetParserXS',
                                      NAMES        => \@names,
