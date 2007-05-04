@@ -1,13 +1,34 @@
 package Cache::Memcached::GetParserXS;
 
+=head1 NAME
+
+Cache::Memcached::GetParserXS - GetParser implementation in XS for use with Cache::Memcached
+
+=head1 SYNOPSIS
+
+  use Cache::Memcached::GetParserXS;
+  use Cache::Memcached;
+
+  # Everything else is the same as Cache::Memcached has documented it.
+  # Seriously.
+
+=head1 DESCRIPTION
+
+This module implements the same function as Cache::Memcached::GetParser, except it's written
+in C/XS. Initial benchmarks have shown it to be possibly twice as fast as the original perl
+version.
+
+=cut
+
 use 5.006;
 use strict;
 use warnings;
+
 # We don't want to inherit from this, because our constants may be different.
 # use base 'Cache::Memcached::GetParser';
+
 use Carp;
 use Errno qw( EINPROGRESS EWOULDBLOCK EISCONN );
-use AutoLoader;
 use Cache::Memcached 1.21;
 
 our $VERSION = '0.01';
@@ -144,53 +165,25 @@ sub AUTOLOAD {
 
 1;
 __END__
-# Below is stub documentation for your module. You'd better edit it!
-
-=head1 NAME
-
-Cache::Memcached::GetParserXS - Perl extension for blah blah blah
-
-=head1 SYNOPSIS
-
-  use Cache::Memcached::GetParserXS;
-  blah blah blah
-
-=head1 DESCRIPTION
-
-Stub documentation for Cache::Memcached::GetParserXS, created by h2xs. It looks like the
-author of the extension was negligent enough to leave the stub
-unedited.
-
-Blah blah blah.
-
-=head2 EXPORT
-
-None by default.
-
-
 
 =head1 SEE ALSO
 
-Mention other useful documentation such as the documentation of
-related modules or operating system documentation (such as man pages
-in UNIX), or any relevant external documentation such as RFCs or
-standards.
+Cache::Memcached
 
-If you have a mailing list set up for your module, mention it here.
+=head1 AUTHORS
 
-If you have a web site set up for your module, mention it here.
+Jonathan Steinert E<lt>hachi@cpan.orgE<gt> - Current maintainer
 
-=head1 AUTHOR
+Aaron Emigh
 
-LiveJournal user, E<lt>lj@E<gt>
+Brad Fitzpatrick
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2006 by LiveJournal user
+Copyright (C) 2007 Six Apart Ltd.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.4 or,
 at your option, any later version of Perl 5 you may have available.
-
 
 =cut

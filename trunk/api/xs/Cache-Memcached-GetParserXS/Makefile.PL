@@ -1,4 +1,4 @@
-use 5.008004;
+use 5.006;
 use ExtUtils::MakeMaker;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
@@ -10,7 +10,7 @@ WriteMakefile(
                   'Cache::Memcached' => 1.21,
               }, # e.g., Module::Name => 1.1
               ABSTRACT_FROM  => 'lib/Cache/Memcached/GetParserXS.pm', # retrieve abstract from module
-              AUTHOR         => 'LiveJournal user <lj@>',
+              AUTHOR         => 'Jonathan Steinert <hachi@cpan.org>',
               LIBS              => [''], # e.g., '-lm'
               DEFINE            => '', # e.g., '-DHAVE_SOMETHING'
               INC               => '-I.', # e.g., '-I. -I/usr/include/other'
