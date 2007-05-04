@@ -57,11 +57,16 @@ foreach my $name (@wrap_subs) {
             );
 }
 
-my $gets = 1000; #1000
+my $gets = 1000;
 my $max_key = 1000;
+my $data_min = 2000;
+my $data_max = 12_000;
+
 die unless GetOptions(
-		      'gets' => \$gets,
+		      'gets=i' => \$gets,
 		      'maxkey=i' => \$max_key,
+		      'data_min=i' => \$data_min,
+		      'data_max=i' => \$data_max,
 );
 
 my $memd = new Cache::Memcached {
@@ -70,9 +75,10 @@ my $memd = new Cache::Memcached {
 };
 
 my %correct;
-srand (1);
+my $data_delta = $data_max - $data_min;
+
 for my $k (1..$max_key) {
-    my $val = join('', map { chr(64 + int rand (60)) } (1..(2000 + int rand 10_000)));
+    my $val = join('', map { chr(64 + int rand (60)) } (1..($data_min + int rand $data_delta)));
     $correct{$k} = $val;
     my $rv = $memd->set($k, $val)
         or die "Failed to set $k";
@@ -113,4 +119,6 @@ my $cpu_sys = $end_cpu_sys - $start_cpu_sys;
 
 warn "$bad bad results\n";
 
-warn "elapsed times: $elapsed wallclock, $cpu_user user, $cpu_sys system\n"
+warn "elapsed times: $elapsed wallclock, $cpu_user user, $cpu_sys system\n";
+
+print "$data_min, $data_max, $elapsed, $cpu_user, $cpu_sys\n";
