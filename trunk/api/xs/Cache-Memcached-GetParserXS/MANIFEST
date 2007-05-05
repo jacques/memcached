@@ -5,6 +5,4 @@ MANIFEST
 ppport.h
 README
 t/Cache-Memcached-GetParserXS.t
-fallback/const-c.inc
-fallback/const-xs.inc
 lib/Cache/Memcached/GetParserXS.pm
