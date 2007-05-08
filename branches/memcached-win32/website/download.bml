@@ -1,0 +1,26 @@
+<?page
+wintitle=>download
+body<=
+
+<?h1 Download Server h1?>
+
+<p>The server is licensed under the BSD License.</p>
+
+<p>Main (1.2.x) series:</p>
+
+<ul>
+<li><a href="dist/memcached-1.2.2.tar.gz">memcached-1.2.2.tar.gz</a> -- May 3, 2007 [<a href="news.bml">Changes</a>]
+</ul>
+
+<p>Old (1.1.x) series, now maintenance releases only:</p>
+
+<ul>
+<li><a href="dist/memcached-1.1.13.tar.gz">memcached-1.1.13.tar.gz</a> -- Sep 9, 2006 [<a href="http://code.sixapart.com/svn/memcached/tags/1.1.13/ChangeLog">Changes</a>]
+</ul>
+
+<?h1 Download Client APIs h1?>
+<p>The client APIs, licensed individually, are available for download on the <a href="apis.bml">Client APIs</a> page.</p>
+
+
+<=body
+page?>
