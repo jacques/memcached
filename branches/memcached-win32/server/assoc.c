@@ -14,13 +14,21 @@
  */
 
 #include "memcached.h"
+
 #include <sys/stat.h>
 #include <sys/socket.h>
+
+#ifndef WIN32
 #include <sys/signal.h>
 #include <sys/resource.h>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <errno.h>
+#else /* !WIN32 */
+#include "Win32-Code/config.h"
+#include <Winsock2.h>
+#endif /* WIN32 */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

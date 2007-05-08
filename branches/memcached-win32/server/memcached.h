@@ -1,12 +1,19 @@
 /* -*- Mode: C; tab-width: 4; c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* $Id$ */
 
+
+
+#ifndef WIN32
 #include "config.h"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <netinet/in.h>
 #include <event.h>
+
+#else
+#include "Win32-Code/win32.h"
+#endif /* WIN32 */
 
 #define DATA_BUFFER_SIZE 2048
 #define UDP_READ_BUFFER_SIZE 65536

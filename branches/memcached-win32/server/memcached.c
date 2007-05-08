@@ -17,6 +17,8 @@ std *
  */
 #include "memcached.h"
 #include <sys/stat.h>
+
+#ifndef WIN32
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/signal.h>
@@ -38,6 +40,13 @@ std *
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#else /* !WIN32 */
+#include "Win32-Code/config.h"
+#include <Winsock2.h>
+#include <process.h>
+#include "Win32-Code/ntservice.h"
+#include "compat/bsd_getopt.h"
+#endif /* WIN32 */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -853,6 +862,7 @@ static void process_stat(conn *c, token_t *tokens, const size_t ntokens) {
         out_string(c, "CLIENT_ERROR bad command line");
         return;
     }
+#endif /* !WIN32 */
 
     command = tokens[COMMAND_TOKEN].value;
 
@@ -2191,6 +2201,7 @@ static int new_socket_unix(void) {
     return sfd;
 }
 
+#ifndef WIN32
 static int server_socket_unix(const char *path) {
     int sfd;
     struct linger ling = {0, 0};
@@ -2238,6 +2249,8 @@ static int server_socket_unix(const char *path) {
     }
     return sfd;
 }
+#endif /* WIN32 */
+
 
 /* listening socket */
 static int l_socket = 0;
@@ -2247,11 +2260,13 @@ static int u_socket = -1;
 
 /* invoke right before gdb is called, on assert */
 void pre_gdb(void) {
+#ifndef WIN32
     int i;
     if (l_socket > -1) close(l_socket);
     if (u_socket > -1) close(u_socket);
     for (i = 3; i <= 500; i++) close(i); /* so lame */
     kill(getpid(), SIGABRT);
+#endif
 }
 
 /*
@@ -2333,7 +2348,15 @@ static void usage(void) {
            "-U <num>      UDP port number to listen on (default: 0, off)\n"
            "-s <file>     unix socket path to listen on (disables network support)\n"
            "-l <ip_addr>  interface to listen on, default is INDRR_ANY\n"
+#ifndef WIN32
            "-d            run as a daemon\n"
+#else /* !WIN32 */
+           "-d start          tell memcached to start\n"
+           "-d restart        tell running memcached to do a graceful restart\n"
+           "-d stop|shutdown  tell running memcached to shutdown\n"
+           "-d install        install memcached service\n"
+           "-d uninstall      uninstall memcached service\n"
+#endif /* WIN32 */
            "-r            maximize core file limit\n"
            "-u <username> assume identity of <username> (only when run as root)\n"
            "-m <num>      max memory to use for items in megabytes, default is 64 MB\n"
@@ -2420,6 +2443,80 @@ static void usage_license(void) {
     "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
     "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF\n"
     "THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+#ifdef WIN32
+	"This product includes software developed by the NetBSD\n"
+	"Foundation, Inc. and its contributors.\n"
+	"\n"
+	"[ bsd_getopts ]\n"
+	"\n"
+	"Copyright (c) 2000 The NetBSD Foundation, Inc.\n"
+	"All rights reserved.\n"
+	"\n"
+	"This code is derived from software contributed to The NetBSD Foundation\n"
+	"by Dieter Baron and Thomas Klausner.\n"
+	"\n"
+	"Redistribution and use in source and binary forms, with or without\n"
+	"modification, are permitted provided that the following conditions\n"
+	"are met:\n"
+	"1. Redistributions of source code must retain the above copyright\n"
+	"   notice, this list of conditions and the following disclaimer.\n"
+	"2. Redistributions in binary form must reproduce the above copyright\n"
+	"   notice, this list of conditions and the following disclaimer in the\n"
+	"   documentation and/or other materials provided with the distribution.\n"
+	"3. All advertising materials mentioning features or use of this software\n"
+	"   must display the following acknowledgement:\n"
+	"       This product includes software developed by the NetBSD\n"
+	"       Foundation, Inc. and its contributors.\n"
+	"4. Neither the name of The NetBSD Foundation nor the names of its\n"
+	"   contributors may be used to endorse or promote products derived\n"
+	"   from this software without specific prior written permission.\n"
+	"\n"
+	"THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS\n"
+	"``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED\n"
+	"TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR\n"
+	"PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS\n"
+	"BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR\n"
+	"CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF\n"
+	"SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS\n"
+	"INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN\n"
+	"CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)\n"
+	"ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE\n"
+	"POSSIBILITY OF SUCH DAMAGE.\n"
+	"\n"
+	"\n"	
+	"Win32 port by Kronuz\n"
+	"This product includes software developed by Kronuz.\n"
+	"\n"
+	"[ ntservice ]\n"
+	"\n"
+	"Copyright (c) 2006 Germán Méndez Bravo (Kronuz) <kronuz@users.sf.net>\n"
+	"All rights reserved.\n"
+	"\n"
+	"Redistribution and use in source and binary forms, with or without\n"
+	"modification, are permitted provided that the following conditions\n"
+	"are met:\n"
+	"1. Redistributions of source code must retain the above copyright\n"
+	"   notice, this list of conditions and the following disclaimer.\n"
+	"2. Redistributions in binary form must reproduce the above copyright\n"
+	"   notice, this list of conditions and the following disclaimer in the\n"
+	"   documentation and/or other materials provided with the distribution.\n"
+	"3. All advertising materials mentioning features or use of this software\n"
+	"   must display the following acknowledgement:\n"
+	"      This product includes software developed by Kronuz.\n"
+	"4. The name of the author may not be used to endorse or promote products\n"
+	"   derived from this software without specific prior written permission.\n"
+	"\n"
+	"THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR\n"
+	"IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES\n"
+	"OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.\n"
+	"IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,\n"
+	"INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT\n"
+	"NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
+	"DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
+	"THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
+	"(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF\n"
+	"THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+#endif /* WIN32 */
     );
 
     return;
@@ -2466,12 +2563,21 @@ int main (int argc, char **argv) {
     int maxcore = 0;
     char *username = NULL;
     char *pid_file = NULL;
+
+#ifndef WIN32
     struct passwd *pw;
     struct sigaction sa;
     struct rlimit rlim;
 
     /* handle SIGINT */
     signal(SIGINT, sig_handler);
+#else /* !WIN32 */
+    WSADATA wsaData;
+    if(WSAStartup(MAKEWORD(2,0), &wsaData) != 0) {
+        fprintf(stderr, "Socket Initialization Error. Program  aborted\n");
+        return;
+    }
+#endif /* WIN32 */
 
     /* init settings */
     settings_init();
@@ -2595,6 +2701,7 @@ int main (int argc, char **argv) {
             exit(EXIT_FAILURE);
         }
     }
+#endif /* !WIN32 */
 
     /*
      * If needed, increase rlimits to allow as many connections
@@ -2641,6 +2748,7 @@ int main (int argc, char **argv) {
         }
     }
 
+#ifndef WIN32
     /* lose root privileges if we have them */
     if (getuid() == 0 || geteuid() == 0) {
         if (username == 0 || *username == '\0') {
@@ -2665,7 +2773,9 @@ int main (int argc, char **argv) {
             exit(EXIT_FAILURE);
         }
     }
+#endif /* !WIN32 */
 
+#ifndef WIN32
     /* daemonize if requested */
     /* if we want to ensure our ability to dump core, don't chdir to / */
     if (daemonize) {
@@ -2706,6 +2816,7 @@ int main (int argc, char **argv) {
 #endif
     }
 
+#ifndef WIN32
     /*
      * ignore SIGPIPE signals; we can use errno==EPIPE if we
      * need that information
@@ -2717,6 +2828,7 @@ int main (int argc, char **argv) {
         perror("failed to ignore SIGPIPE; sigaction");
         exit(EXIT_FAILURE);
     }
+#endif /* !WIN32 */
     /* create the initial listening connection */
     if (!(listen_conn = conn_new(l_socket, conn_listening,
                                  EV_READ | EV_PERSIST, 1, false, main_base))) {
