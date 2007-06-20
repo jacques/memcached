@@ -13,7 +13,7 @@ page<=
 <?link download.bml|Download link?>
 <?link apis.bml|Client APIs link?>
 <?link users.bml|Users link?>
-<?link http://www.socialtext.net/memcached/|FAQ / Wiki?>
+<?link http://www.socialtext.net/memcached/|FAQ / Wiki link?>
 <?link http://lists.danga.com/mailman/listinfo/memcached|Mailing List link?>
 </div>
 
