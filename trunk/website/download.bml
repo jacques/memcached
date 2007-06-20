@@ -18,6 +18,13 @@ body<=
 <li><a href="dist/memcached-1.1.13.tar.gz">memcached-1.1.13.tar.gz</a> -- Sep 9, 2006 [<a href="http://code.sixapart.com/svn/memcached/tags/1.1.13/ChangeLog">Changes</a>]
 </ul>
 
+<p>Subversion</p>
+
+<ul>
+<li><a href="http://code.sixapart.com/svn/memcached/">Subversion repository</a> [<a href="http://code.sixapart.com/trac/memcached/log">svn log</a>]
+</ul>
+
+
 <?h1 Download Client APIs h1?>
 <p>The client APIs, licensed individually, are available for download on the <a href="apis.bml">Client APIs</a> page.</p>
 
