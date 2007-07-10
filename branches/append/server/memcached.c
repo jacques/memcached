@@ -933,7 +933,7 @@ static void process_stat(conn *c, token_t *tokens, const size_t ntokens) {
 #endif /* HAVE_STRUCT_MALLINFO */
 #endif /* HAVE_MALLOC_H */
 
-#if !defined(WIN32) || !defined(__APPLE__)
+#if !defined(WIN32) && !defined(__APPLE__)
     if (strcmp(subcommand, "maps") == 0) {
         char *wbuf;
         int wsize = 8192; /* should be enough */
