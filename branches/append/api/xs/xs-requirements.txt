@@ -1,0 +1,73 @@
+Quick overview of what we need in terms of XS/C for the Perl
+Cache::Memcached client:
+
+Motivation
+==========
+Less CPU consumption.  In particular, the parsing of responses from
+memcached servers during "get" operations is slow.
+
+Requirements
+============
+
+  -- for compatibility, maintainability, and ease-of-rollout (so we
+     can deploy the new version incrementally as we gradually test it
+     and measure it), we want to retain as much of the Perl client as
+     possible.  in particular:
+
+       * Server selection should still be done by Perl, include picking
+         new (or no) servers on retry.
+
+       * The 16 bit server-opaque client flags should still be set/decoded
+         by Perl, for stuff like compression and freeze/thawing.
+
+       * identical constructor and options and docs.  biggest acceptable
+         change to interface is a "no_xs => 1" flag to constructor, otherwise
+         use XS version if available
+
+       * fall back to pure-perl (current implementation) if XS module
+         isn't available
+
+     Basically we have years of trust of the Perl code, and we don't want
+     to throw it out with a new implementation.  The existing Perl code took
+     us quite a awhile to get to a happy state where it now survives every
+     sort of failure we can throw at it.
+
+  -- only get/get_multi responses need to go through C parsing code.
+     we don't care about the performance of the relatively unused
+     set/delete/etc operations.
+
+  -- final deliverable must include a test suite to show variety of successes
+     and (handled) errors.
+
+  -- final deliverable must include some benchmark, showing speed
+     increase on empty results, small results (one key and many keys),
+     and large (multi-packet) results (for one key and many keys)
+
+Work already done
+=================
+Work has stopped and started on this several times.  A prototype XS
+module, Cache::Memcached::GetParserXS, was written to parse the get
+responses, with the Perl implementation moved to
+Cache::Memcached::GetParser, the core module, Cache::Memcached,
+updated to pick which one at runtime.  Unfortunately, the XS getparser
+turned out slower for whatever reason: presumably due to bouncing
+between Perl and C worlds too often.  Perhaps it should store all
+received data until the "END", then switch back to Perl to "finalize"
+(decompress/thaw) them all, as needed.
+
+We'd prefer this model be followed, if possible, where Perl code does
+the connects/timeouts/reconnects/sends (of "GET xxx") line, and then
+as network data is received, it's "pushed" into the parser.  (again
+keeping with the idea of minimal changes to the Perl code.)  This way,
+the XS code can't be responsible for reading sockets wrong, blocking,
+etc.
+
+That said, a wrapper around libmemcached or similar is acceptable, if
+it's minimally invasive and we have means to incrementally roll it out
+on some percentage of our servers over time, without server selection
+(including on error) being different, and also so the Perl code still
+can do compression and Storable.pm work.
+
+
+
+
