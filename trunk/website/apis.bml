@@ -61,8 +61,16 @@ you to access memcache servers from Postgresql Stored Procedures and Triggers.
 More details and downloads are available at:</p>
 
 <ul>
-<li><a href="http://pgfoundry.org/projects/pgmemcache/">http://pgfoundry.org/projects/pgmemcache/</a>
+<li><a href="http://pgfoundry.org/projects/pgmemcache/">http://pgfoundry.org/projects/pgmemcache/</a></li>
 </ul>
+
+<?h1 Chicken Scheme h1?>
+<p>
+</p>
+<ul>
+<li><a href="http://chicken.wiki.br/memcached">http://chicken.wiki.br/memcached</a> -- Chicken Scheme library</li>
+</ul>
+
 
 <?h1 Protocol h1?> <p>To write a new client, check out the <a
 href="http://code.sixapart.com/svn/memcached/trunk/server/doc/protocol.txt">protocol
