@@ -71,6 +71,13 @@ More details and downloads are available at:</p>
 <li><a href="http://chicken.wiki.br/memcached">http://chicken.wiki.br/memcached</a> -- Chicken Scheme library</li>
 </ul>
 
+<?h1 .Net h1?>
+<p>
+Client developed in .NET 2.0 keeping performance and extensibility in mind. (Supports consistent hashing.)
+</p>
+<ul>
+<li><a href="http://www.codeplex.com/EnyimMemcached/">http://www.codeplex.com/EnyimMemcached/</a>
+</ul>
 
 <?h1 Protocol h1?> <p>To write a new client, check out the <a
 href="http://code.sixapart.com/svn/memcached/trunk/server/doc/protocol.txt">protocol
