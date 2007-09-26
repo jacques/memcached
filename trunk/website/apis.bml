@@ -40,6 +40,13 @@ the memcached.</p>
 <li><a href="http://www.whalin.com/memcached/">http://www.whalin.com/memcached/</a> -- Java API for memcached
 </ul>
 
+<p>An improved Java API maintained by Dustin Sallings is also available.  Aggressively optimised, ability to run async, supports binary protocol, etc. See site for details:
+
+<ul>
+<li><a
+href="http://bleu.west.spy.net/~dustin/projects/memcached/">http://bleu.west.spy.net/~dustin/projects/memcached/</a> -- Improved Java API for memcached
+</ul>
+
 <?h1 C# API h1?>
 <p>There are multiple C# APIs:
 
