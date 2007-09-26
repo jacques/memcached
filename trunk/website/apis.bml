@@ -37,22 +37,22 @@ the memcached.</p>
 <p>A Java API is maintained by <a href="mailto:greg@meetup.com">Greg Whalin</a> from <a href="http://www.meetup.com/">Meetup.com</a>.  You can find that library here:
 
 <ul>
-<li><a href="http://www.whalin.com/memcached/">http://www.whalin.com/memcached/</a> -- Java API for memcached
+<li><a href="http://www.whalin.com/memcached/">http://www.whalin.com/memcached/</a> -- Java API for memcached</li>
 </ul>
 
 <p>An improved Java API maintained by Dustin Sallings is also available.  Aggressively optimised, ability to run async, supports binary protocol, etc. See site for details:
 
 <ul>
 <li><a
-href="http://bleu.west.spy.net/~dustin/projects/memcached/">http://bleu.west.spy.net/~dustin/projects/memcached/</a> -- Improved Java API for memcached
+href="http://bleu.west.spy.net/~dustin/projects/memcached/">http://bleu.west.spy.net/~dustin/projects/memcached/</a> -- Improved Java API for memcached</li>
 </ul>
 
 <?h1 C# API h1?>
 <p>There are multiple C# APIs:
 
 <ul>
-<li><a href="https://sourceforge.net/projects/memcacheddotnet/">https://sourceforge.net/projects/memcacheddotnet/</a>
-<li><a href="http://www.codeplex.com/EnyimMemcached/">http://www.codeplex.com/EnyimMemcached/</a> - Client developed in .NET 2.0 keeping performance and extensibility in mind. (Supports consistent hashing.)
+<li><a href="https://sourceforge.net/projects/memcacheddotnet/">https://sourceforge.net/projects/memcacheddotnet/</a></li>
+<li><a href="http://www.codeplex.com/EnyimMemcached/">http://www.codeplex.com/EnyimMemcached/</a> - Client developed in .NET 2.0 keeping performance and extensibility in mind. (Supports consistent hashing.)</li>
 </ul>
 
 <?h1 C API h1?>
