@@ -80,6 +80,15 @@ More details and downloads are available at:</p>
 <li><a href="http://chicken.wiki.br/memcached">http://chicken.wiki.br/memcached</a> -- Chicken Scheme library</li>
 </ul>
 
+<?h1 MySQL API h1?>
+<p>The memcache_engine allows memcache to work as a storage engine to MySQL.
+This means that you can SELECT/UPDATE/INSERTE/DELETE from it as though it is a
+table in MySQL.
+</p>
+<ul>
+<li><a href="http://tangent.org/index.pl?node_id=506">memcache_engine</a></li>
+</ul>
+
 <?h1 Protocol h1?> <p>To write a new client, check out the <a
 href="http://code.sixapart.com/svn/memcached/trunk/server/doc/protocol.txt">protocol
 docs</a>.  Be aware that the most important part of the client is the
