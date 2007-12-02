@@ -88,6 +88,13 @@ table in MySQL.
 <ul>
 <li><a href="http://tangent.org/index.pl?node_id=506">memcache_engine</a></li>
 </ul>
+<p>A set of MySQL UDFs (user defined functions) to work with memcached using
+libmemcached.
+</p>
+<ul>
+<li><a href="http://tangent.org/586/Memcached_Functions_for_MySQL.html">MySQL
+UDFs for memcached</a></li>
+</ul>
 
 <?h1 Protocol h1?> <p>To write a new client, check out the <a
 href="http://code.sixapart.com/svn/memcached/trunk/server/doc/protocol.txt">protocol
