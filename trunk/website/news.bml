@@ -5,6 +5,10 @@ body<=
 <?h1 News h1?> 
 <p></p>
 
+<p><b>2007-12-06:</b> Version 1.2.4 <a href="download.bml">released</a>.
+Many bug and platform fixes since 1.2.2. New threading support for stat
+queries. New commands 'append', 'prepend', 'gets', and 'cas'.
+
 <p><b>2007-05-02:</b> Version 1.2.2 <a href="download.bml">released</a>.
 Memcached can be configured to support multithreading.  Big code cleanup with 
 performance improvements.  Memcached now collects eviction and per-object-type 
