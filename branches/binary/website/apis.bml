@@ -1,0 +1,108 @@
+<?page
+wintitle=>client apis
+body<=
+
+<?h1 Perl API h1?>
+
+<p> An object-oriented Perl module can be <a href="http://search.cpan.org/dist/Cache-Memcached/">found
+on CPAN</a> as <tt>Cache::Memcached</tt> or <a href="http://code.sixapart.com/svn/memcached/trunk/api/perl/">
+in Subversion</a> (<a href="http://code.sixapart.com/svn/memcached/trunk/api/perl/ChangeLog">ChangeLog</a>).
+(GPL/Artistic)</p>
+
+<p>The Perl API takes advantage of the server's opaque flag support and
+sets its "complex" flag whenever the object being stored or retrieved
+isn't a plain scalar.  In that case, the <tt>Storable</tt> module is
+used to freeze and thaw the value automatically going in and out of
+the memcached.</p>
+
+<?h1 PHP API h1?>
+
+<p>There are tons of PHP libraries available, in different conditions.  But it now seems there's an official one:</p>
+<ul>
+<li><a href="http://pecl.php.net/package/memcache">PHP PECL memcached client</a> -- official PHP client</li>
+</ul>
+
+<?h1 Python API h1?>
+
+<p>The Python client we'd previously released was just a prototype, and we don't have regular Python programmers on hand.  The folks at Tummy.com have took over maintenance.  See <a href="ftp://ftp.tummy.com/pub/python-memcached/">ftp://ftp.tummy.com/pub/python-memcached/</a> for the latest versions.</p>
+
+<?h1 Ruby API h1?>
+
+<ul>
+<li><a href="http://www.deveiate.org/code/Ruby-MemCache.html">http://www.deveiate.org/code/Ruby-MemCache.html</a></li>
+<li>gem install memcache-client</li>
+</ul>
+
+<?h1 Java API h1?>
+<p>A Java API is maintained by <a href="mailto:greg@meetup.com">Greg Whalin</a> from <a href="http://www.meetup.com/">Meetup.com</a>.  You can find that library here:
+
+<ul>
+<li><a href="http://www.whalin.com/memcached/">http://www.whalin.com/memcached/</a> -- Java API for memcached</li>
+</ul>
+
+<p>An improved Java API maintained by Dustin Sallings is also available.  Aggressively optimised, ability to run async, supports binary protocol, etc. See site for details:
+
+<ul>
+<li><a
+href="http://bleu.west.spy.net/~dustin/projects/memcached/">http://bleu.west.spy.net/~dustin/projects/memcached/</a> -- Improved Java API for memcached</li>
+</ul>
+
+<?h1 C# API h1?>
+<p>There are multiple C# APIs:
+
+<ul>
+<li><a href="https://sourceforge.net/projects/memcacheddotnet/">https://sourceforge.net/projects/memcacheddotnet/</a></li>
+<li><a href="http://www.codeplex.com/EnyimMemcached/">http://www.codeplex.com/EnyimMemcached/</a> - Client developed in .NET 2.0 keeping performance and extensibility in mind. (Supports consistent hashing.)</li>
+</ul>
+
+<?h1 C API h1?>
+<p>Multiple C libraries for memcached exist:</p>
+<ul>
+<li><a href="http://www.outoforder.cc/projects/libs/apr_memcache/">apr_memcache</a> by Paul Querna; Apache Software License version 2.0</li>
+<li><a href="http://tangent.org/552/libmemcached.html">libmemcached</a> by
+Brian Aker; BSD license.</li>
+<li><a href="http://people.freebsd.org/~seanc/libmemcache/">libmemcache</a> by Sean Chittenden; BSD license.</li>
+</ul>
+
+<?h1 Postgres API h1?>
+<p>The pgmemcache project allows
+you to access memcache servers from Postgresql Stored Procedures and Triggers.  
+More details and downloads are available at:</p>
+
+<ul>
+<li><a href="http://pgfoundry.org/projects/pgmemcache/">http://pgfoundry.org/projects/pgmemcache/</a></li>
+</ul>
+
+<?h1 Chicken Scheme h1?>
+<p>
+</p>
+<ul>
+<li><a href="http://chicken.wiki.br/memcached">http://chicken.wiki.br/memcached</a> -- Chicken Scheme library</li>
+</ul>
+
+<?h1 MySQL API h1?>
+<p>The memcache_engine allows memcache to work as a storage engine to MySQL.
+This means that you can SELECT/UPDATE/INSERTE/DELETE from it as though it is a
+table in MySQL.
+</p>
+<ul>
+<li><a href="http://tangent.org/index.pl?node_id=506">memcache_engine</a></li>
+</ul>
+<p>A set of MySQL UDFs (user defined functions) to work with memcached using
+libmemcached.
+</p>
+<ul>
+<li><a href="http://tangent.org/586/Memcached_Functions_for_MySQL.html">MySQL
+UDFs for memcached</a></li>
+</ul>
+
+<?h1 Protocol h1?> <p>To write a new client, check out the <a
+href="http://code.sixapart.com/svn/memcached/trunk/server/doc/protocol.txt">protocol
+docs</a>.  Be aware that the most important part of the client is the
+hashing across multiple servers, based on the key, or an optional
+caller-provided hashing value.  Feel free to join the mailing list (or
+mail me directly) for help, inclusion in Subversion, and/or a link to your
+client from this site.</p>
+
+<=body
+page?>
