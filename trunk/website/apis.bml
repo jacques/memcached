@@ -15,6 +15,10 @@ isn't a plain scalar.  In that case, the <tt>Storable</tt> module is
 used to freeze and thaw the value automatically going in and out of
 the memcached.</p>
 
+<p>There is also Cache::Memcached::Fast---another Perl client written in C,
+largely compatible with the original Cache::Memcached. Available on CPAN at <a
+href="http://search.cpan.org/dist/Cache-Memcached-Fast/">http://search.cpan.org/dist/Cache-Memcached-Fast/</a>.</p>
+
 <?h1 PHP API h1?>
 
 <p>There are tons of PHP libraries available, in different conditions.  But it now seems there's an official one:</p>
