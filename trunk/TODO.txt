@@ -1,17 +1,8 @@
-* virtual bucket support
-  http://rt.livejournal.org/Ticket/Display.html?id=50
-
 * Cache-Memcached and Devel::Profile
   http://rt.livejournal.org/Ticket/Display.html?id=319
 
-* Atomic replace and append operations (fwd)
-  http://rt.livejournal.org/Ticket/Display.html?id=329
-
 * Re: Cache::Memcached fix for problems with sockets used as string (fwd)
   http://rt.livejournal.org/Ticket/Display.html?id=339
-
-* perl hot spots of Cache::MemCached in C
-  http://rt.livejournal.org/Ticket/Display.html?id=562
 
 * Using constant makes campers happy
   http://rt.livejournal.org/Ticket/Display.html?id=720
@@ -24,9 +15,6 @@
 
 * use gotos for 10% speed up of _oneline
   http://rt.livejournal.org/Ticket/Display.html?id=723
-
-* Subject: some fixes and improvements
-  http://rt.livejournal.org/Ticket/Display.html?id=1228
 
 * sendfile from memcached?
   http://rt.livejournal.org/Ticket/Display.html?id=1230
