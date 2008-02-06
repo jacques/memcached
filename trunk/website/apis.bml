@@ -35,6 +35,7 @@ href="http://search.cpan.org/dist/Cache-Memcached-Fast/">http://search.cpan.org/
 <ul>
 <li><a href="http://www.deveiate.org/code/Ruby-MemCache.html">http://www.deveiate.org/code/Ruby-MemCache.html</a></li>
 <li>gem install memcache-client</li>
+<li><a href="http://blog.evanweaver.com/files/doc/fauna/memcached/">http://blog.evanweaver.com/files/doc/fauna/memcached/</a>. C backed client wrapping libmemcached.
 </ul>
 
 <?h1 Java API h1?>
