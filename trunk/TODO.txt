@@ -4,18 +4,6 @@
 * Re: Cache::Memcached fix for problems with sockets used as string (fwd)
   http://rt.livejournal.org/Ticket/Display.html?id=339
 
-* Using constant makes campers happy
-  http://rt.livejournal.org/Ticket/Display.html?id=720
-
-* Make the control flow way more readable
-  http://rt.livejournal.org/Ticket/Display.html?id=721
-
-* micro optimisation for most common case
-  http://rt.livejournal.org/Ticket/Display.html?id=722
-
-* use gotos for 10% speed up of _oneline
-  http://rt.livejournal.org/Ticket/Display.html?id=723
-
 * sendfile from memcached?
   http://rt.livejournal.org/Ticket/Display.html?id=1230
 
