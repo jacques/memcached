@@ -58,6 +58,7 @@ href="http://bleu.west.spy.net/~dustin/projects/memcached/">http://bleu.west.spy
 <ul>
 <li><a href="https://sourceforge.net/projects/memcacheddotnet/">https://sourceforge.net/projects/memcacheddotnet/</a></li>
 <li><a href="http://www.codeplex.com/EnyimMemcached/">http://www.codeplex.com/EnyimMemcached/</a> - Client developed in .NET 2.0 keeping performance and extensibility in mind. (Supports consistent hashing.)</li>
+<li><a href="http://code.google.com/p/beitmemcached/">http://code.google.com/p/beitmemcached/</a> - Client developed by BeIT with many new features.</li>
 </ul>
 
 <?h1 C API h1?>
