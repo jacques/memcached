@@ -3338,6 +3338,29 @@ static void remove_pidfile(const char *pid_file) {
 
 }
 
+static void setup_listening_conns(int *l_socket, int count, const int prot) {
+    /* create the initial listening connection */
+    int x;
+    int *l_socket_ptr;
+    conn *next = listen_conn;
+    for (l_socket_ptr= l_socket, x = 0; x < count; l_socket_ptr++, x++) {
+        conn *listen_conn_add;
+        if (*l_socket_ptr > -1 ) {
+            if (!(listen_conn_add = conn_new(*l_socket_ptr, conn_listening,
+                                             EV_READ | EV_PERSIST,
+                                             1, prot, main_base))) {
+                fprintf(stderr, "failed to create listening connection\n");
+                exit(EXIT_FAILURE);
+            }
+
+            if (listen_conn == NULL) {
+                next = listen_conn = listen_conn_add;
+            } else {
+                next->next= listen_conn_add;
+            }
+        }
+    }
+}
 
 static void sig_handler(const int sig) {
     printf("SIGINT handled.\n");
@@ -3346,7 +3369,6 @@ static void sig_handler(const int sig) {
 
 int main (int argc, char **argv) {
     int c;
-    int x;
     bool lock_memory = false;
     bool daemonize = false;
     int maxcore = 0;
@@ -3632,42 +3654,9 @@ int main (int argc, char **argv) {
         perror("failed to ignore SIGPIPE; sigaction");
         exit(EXIT_FAILURE);
     }
-    /* create the initial listening connection */
-    int *l_socket_ptr;
-    conn *next = NULL;
-    for (l_socket_ptr= l_socket, x = 0; x < l_socket_count; l_socket_ptr++, x++) {
-        conn *listen_conn_add;
-        if (*l_socket_ptr > -1 ) {
-            if (!(listen_conn_add = conn_new(*l_socket_ptr, conn_listening,
-                                             EV_READ | EV_PERSIST, 1, ascii_prot, main_base))) {
-                fprintf(stderr, "failed to create listening connection\n");
-                exit(EXIT_FAILURE);
-            }
-
-            if (listen_conn == NULL) {
-                next = listen_conn = listen_conn_add;
-            } else {
-                next->next= listen_conn_add;
-            }
-        }
-    }
-
-    for (l_socket_ptr= bl_socket, x = 0; x < bl_socket_count; l_socket_ptr++, x++) {
-        conn *listen_conn_add;
-        if (*l_socket_ptr > -1 ) {
-            if (!(listen_conn_add = conn_new(*l_socket_ptr, conn_listening,
-                                             EV_READ | EV_PERSIST, 1, binary_prot, main_base))) {
-                fprintf(stderr, "failed to create listening connection\n");
-                exit(EXIT_FAILURE);
-            }
-
-            if (listen_conn == NULL) {
-                next = listen_conn = listen_conn_add;
-            } else {
-                next->next= listen_conn_add;
-            }
-        }
-    }
+    /* Set up all of the listening connections */
+    setup_listening_conns(l_socket, l_socket_count, ascii_prot);
+    setup_listening_conns(bl_socket, bl_socket_count, binary_prot);
 
     /* start up worker threads if MT mode */
     thread_init(settings.num_threads, main_base);
