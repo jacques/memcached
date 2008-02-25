@@ -15,6 +15,10 @@ isn't a plain scalar.  In that case, the <tt>Storable</tt> module is
 used to freeze and thaw the value automatically going in and out of
 the memcached.</p>
 
+<p>There is also Cache::Memcached::Fast---another Perl client written in C,
+largely compatible with the original Cache::Memcached. Available on CPAN at <a
+href="http://search.cpan.org/dist/Cache-Memcached-Fast/">http://search.cpan.org/dist/Cache-Memcached-Fast/</a>.</p>
+
 <?h1 PHP API h1?>
 
 <p>There are tons of PHP libraries available, in different conditions.  But it now seems there's an official one:</p>
@@ -31,6 +35,7 @@ the memcached.</p>
 <ul>
 <li><a href="http://www.deveiate.org/code/Ruby-MemCache.html">http://www.deveiate.org/code/Ruby-MemCache.html</a></li>
 <li>gem install memcache-client</li>
+<li><a href="http://blog.evanweaver.com/files/doc/fauna/memcached/">http://blog.evanweaver.com/files/doc/fauna/memcached/</a>. C backed client wrapping libmemcached.
 </ul>
 
 <?h1 Java API h1?>
@@ -59,9 +64,8 @@ href="http://bleu.west.spy.net/~dustin/projects/memcached/">http://bleu.west.spy
 <p>Multiple C libraries for memcached exist:</p>
 <ul>
 <li><a href="http://www.outoforder.cc/projects/libs/apr_memcache/">apr_memcache</a> by Paul Querna; Apache Software License version 2.0</li>
-<li><a href="http://tangent.org/552/libmemcached.html">libmemcached</a> by
-Brian Aker; BSD license.</li>
-<li><a href="http://people.freebsd.org/~seanc/libmemcache/">libmemcache</a> by Sean Chittenden; BSD license.</li>
+<li><a href="http://tangent.org/552/libmemcached.html">libmemcached</a> by Brian Aker; BSD license. This is a new library, under heavy development.</li>
+<li><a href="http://people.freebsd.org/~seanc/libmemcache/">libmemcache</a> by Sean Chittenden; BSD license. This is the original C library. It is no longer under active development. You should try libmemcached instead.</li>
 </ul>
 
 <?h1 Postgres API h1?>
