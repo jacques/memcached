@@ -2985,7 +2985,6 @@ static void maximize_sndbuf(const int sfd) {
         fprintf(stderr, "<%d send buffer was %d, now %d\n", sfd, old_size, last_good);
 }
 
-
 static int server_socket(const int port, const int prot) {
     int sfd;
     struct linger ling = {0, 0};
@@ -3076,22 +3075,15 @@ static int server_socket(const int port, const int prot) {
             fprintf(stderr, "failed to create listening connection\n");
             exit(EXIT_FAILURE);
         }
-
-        if (listen_conn == NULL) {
-            listen_conn = listen_conn_add;
-        } else {
-            listen_conn_add->next = listen_conn->next;
-            listen_conn->next = listen_conn_add;
-        }
+        listen_conn_add->next = listen_conn;
+        listen_conn = listen_conn_add;
       }
     }
 
     freeaddrinfo(ai);
 
-    if (success == 0)
-        return 1;
-
-    return 0;
+    /* Return zero iff we detected no errors in starting up connections */
+    return success == 0;
 }
 
 static int new_socket_unix(void) {
