@@ -3050,6 +3050,7 @@ static int server_socket(const int port, const int prot) {
                 return 1;
             }
             close(sfd);
+            continue;
         } else {
           success++;
           if (!IS_UDP(prot) && listen(sfd, 1024) == -1) {
@@ -3086,6 +3087,9 @@ static int server_socket(const int port, const int prot) {
     }
 
     freeaddrinfo(ai);
+
+    if (success == 0)
+        return 1;
 
     return 0;
 }
