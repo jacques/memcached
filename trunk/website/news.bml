@@ -5,6 +5,11 @@ body<=
 <?h1 News h1?> 
 <p></p>
 
+<p><b>2008-03-04:</b> Version 1.2.5 <a href="download.bml">released</a>.
+Minor bugfixes, build support for opensolaris, ipv6 support,  "noreply" mode
+for many commands, largepage support for solaris. Made out of memory errors
+more clear and added eviction/OOM tracking per slab class.
+
 <p><b>2007-12-06:</b> Version 1.2.4 <a href="download.bml">released</a>.
 Many bug and platform fixes since 1.2.2. New threading support for stat
 queries. New commands 'append', 'prepend', 'gets', and 'cas'.
