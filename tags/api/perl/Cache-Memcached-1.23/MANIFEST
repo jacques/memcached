@@ -1,0 +1,11 @@
+ChangeLog
+lib/Cache/Memcached.pm
+lib/Cache/Memcached/GetParser.pm
+Makefile.PL
+README
+MANIFEST
+MANIFEST.SKIP
+TODO
+t/use.t
+t/all.t
+META.yml                                 Module meta-data (added by MakeMaker)

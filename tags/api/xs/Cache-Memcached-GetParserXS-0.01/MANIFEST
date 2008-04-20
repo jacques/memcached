@@ -1,0 +1,8 @@
+Changes
+GetParserXS.xs
+Makefile.PL
+MANIFEST
+ppport.h
+README
+t/Cache-Memcached-GetParserXS.t
+lib/Cache/Memcached/GetParserXS.pm
