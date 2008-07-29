@@ -9,7 +9,8 @@ body<=
 <p>Main (1.2.x) series:</p>
 
 <ul>
-<li><a href="dist/memcached-1.2.5.tar.gz">memcached-1.2.5.tar.gz</a> -- Mar 3, 2008 [<a href="news.bml">Changes</a>]
+<li><a href="dist/memcached-1.2.6.tar.gz">memcached-1.2.6.tar.gz</a> -- July
+29, 2008 [<a href="news.bml">Changes</a>]
 </ul>
 
 <p>Old (1.1.x) series, now maintenance releases only:</p>

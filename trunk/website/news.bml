@@ -5,6 +5,10 @@ body<=
 <?h1 News h1?> 
 <p></p>
 
+<p><b>2008-07-29:</b> Version 1.2.6 <a href="download.bml">released</a>.
+Major crash fixes, DTrace support, minor updates. If you have stability issues
+with any previous release, please upgrade to this one.
+
 <p><b>2008-03-04:</b> Version 1.2.5 <a href="download.bml">released</a>.
 Minor bugfixes, build support for opensolaris, ipv6 support,  "noreply" mode
 for many commands, largepage support for solaris. Made out of memory errors
