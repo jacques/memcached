@@ -35,7 +35,7 @@ sub get_foo_object {
 <p>If a host goes down, the API re-maps that dead host's requests onto the servers that are available.</p>
 
 <?h1 Shouldn't the database do this? h1?>
-<p>Regardless of what database you use (MS-SQL, Oracle, Postgres, MysQL-InnoDB, etc..), there's a lot of overhead in implementing <a href="http://www.wikipedia.org/wiki/ACID">ACID</a> properties in a RDBMS, especially when disks are involved, which means queries are going to block.  For databases that aren't ACID-compliant (like MySQL-MyISAM), that overhead doesn't exist, but reading threads block on the writing threads.</p>
+<p>Regardless of what database you use (MS-SQL, Oracle, Postgres, MySQL-InnoDB, etc..), there's a lot of overhead in implementing <a href="http://www.wikipedia.org/wiki/ACID">ACID</a> properties in a RDBMS, especially when disks are involved, which means queries are going to block.  For databases that aren't ACID-compliant (like MySQL-MyISAM), that overhead doesn't exist, but reading threads block on the writing threads.</p>
 <p><?memd?> never blocks.  See the "Is memcached fast?" question below.</p>
 
 <?h1 What about shared memory? h1?>
@@ -76,7 +76,7 @@ ports.</p>
 but you can't spread writes (they have to process on all machines) and
 they'll eventually consume all your resources.  You'll find yourself
 adding replicated slaves at an ever-increasing rate to make up for the
-diminishing returns each addition slave provides.</p>
+diminishing returns each additional slave provides.</p>
 
 <p>The next logical step is to horizontally partition your dataset
 onto different master/slave clusters so you can spread your writes,
