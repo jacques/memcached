@@ -13,13 +13,13 @@ page<=
 <?link download.bml|Download link?>
 <?link apis.bml|Client APIs link?>
 <?link users.bml|Users link?>
-<?link http://www.socialtext.net/memcached/|FAQ / Wiki link?>
-<?link http://lists.danga.com/mailman/listinfo/memcached|Mailing List link?>
+<?link http://code.google.com/p/memcached/wiki/Start|FAQ / Wiki link?>
+<?link http://groups.google.com/group/memcached|Mailing List link?>
 </div>
 
 %%body%%
 
-<div class='footer'>Brad Fitzpatrick &lt;<a href="http://lists.danga.com/mailman/listinfo/memcached">brad@danga.com</a>&gt;</div>
+<div class='footer'>Brad Fitzpatrick &lt;<a href="http://groups.google.com/group/memcached">brad@danga.com</a>&gt;</div>
 
 <script type="text/javascript">
 var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
