@@ -2,6 +2,12 @@
 wintitle=>client apis
 body<=
 
+<?h1 See Wiki h1?>
+
+<p>You probably want <a
+href="http://code.google.com/p/memcached/wiki/Clients">the client list at the
+wiki</a>, as it is actually kept up to date.</p>
+
 <?h1 Perl API h1?>
 
 <p> An object-oriented Perl module can be <a href="http://search.cpan.org/dist/Cache-Memcached/">found
