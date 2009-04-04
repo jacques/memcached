@@ -9,20 +9,16 @@ body<=
 <p>Main (1.2.x) series:</p>
 
 <ul>
-<li><a href="dist/memcached-1.2.6.tar.gz">memcached-1.2.6.tar.gz</a> -- July
-29, 2008 [<a href="news.bml">Changes</a>]
+<li><a
+href="http://memcached.googlecode.com/files/memcached-1.2.7.tar.gz">memcached-1.2.7.tar.gz</a>
+(<a href="dist/memcached-1.2.7.tar.gz">backup link</a>) -- April
+3rd, 2009 [<a href="news.bml">Changes</a>]
 </ul>
 
 <p>Beta (1.3.x) series:</p>
 
 <ul>
 <li><a href="http://code.google.com/p/memcached/downloads/list?q=label:Beta">latest beta release</a> (please help test!)
-</ul>
-
-<p>Old (1.1.x) series, now maintenance releases only:</p>
-
-<ul>
-<li><a href="dist/memcached-1.1.13.tar.gz">memcached-1.1.13.tar.gz</a> -- Sep 9, 2006 [<a href="http://code.sixapart.com/svn/memcached/tags/1.1.13/ChangeLog">Changes</a>]
 </ul>
 
 <p>Subversion</p>

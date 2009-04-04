@@ -5,6 +5,10 @@ body<=
 <?h1 News h1?> 
 <p></p>
 
+<p><b>2009-04-03:</b> Version 1.2.7 <a href="download.bml">released</a>.
+Many minor bugfixes, new statistics, minor new features. If you have stability
+issues with previous releases, please upgrade.
+
 <p><b>2008-07-29:</b> Version 1.2.6 <a href="download.bml">released</a>.
 Major crash fixes, DTrace support, minor updates. If you have stability issues
 with any previous release, please upgrade to this one.
