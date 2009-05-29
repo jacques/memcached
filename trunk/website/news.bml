@@ -5,6 +5,10 @@ body<=
 <?h1 News h1?> 
 <p></p>
 
+<p><b>2009-05-28:</b> Version 1.4.0-rc1 <a href="download.bml">released</a>.
+Release candidate for the next major stable series (1.4.0). It is recommended
+to evaluate this release, as the 1.2.x series is now in maintenance mode.
+
 <p><b>2009-04-10:</b> Version 1.2.8 <a href="download.bml">released</a>.
 Critical bug affecting multithreaded builds of 1.2.7. If you are running 1.2.7
 please upgrade.

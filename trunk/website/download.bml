@@ -15,19 +15,21 @@ href="http://memcached.googlecode.com/files/memcached-1.2.8.tar.gz">memcached-1.
 10th, 2009 [<a href="news.bml">Changes</a>]
 </ul>
 
-<p>Beta (1.3.x) series:</p>
+<p>Release candidate for next stable (1.4.x) series:</p>
 
 <ul>
-<li><a href="http://code.google.com/p/memcached/downloads/list?q=label:Beta">latest beta release</a> (please help test!)
+<li><a
+href="http://code.google.com/p/memcached/downloads/list?q=label:RC">latest release</a> (<a href="dist/memcached-1.4.0-rc1.tar.gz">backup link</a>) (please help test!)
 </ul>
 
 <p>Subversion</p>
 
 <ul>
-<li><a href="http://code.sixapart.com/svn/memcached/">Subversion repository</a> [<a href="http://code.sixapart.com/trac/memcached/log">svn log</a>]
+<li><a href="http://code.sixapart.com/svn/memcached/">Subversion repository (not used for the server software anymore)</a> [<a href="http://code.sixapart.com/trac/memcached/log">svn log</a>]
 </ul>
 
 <p>Git</p>
+<ul><a href="http://github.com/memcached/memcached/tree/master">Git development tree</a></ul>
 
 <ul><a href="http://consoleninja.net/code/memcached/memcached.git">Git stable
 tree</a> [<a
